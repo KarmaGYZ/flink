@@ -27,29 +27,70 @@ import org.apache.flink.shaded.netty4.io.netty.buffer.ByteBuf;
 /**
  * Id identifying {@link IntermediateResultPartition}.
  */
-public class IntermediateResultPartitionID extends AbstractID implements ResultID {
+public class IntermediateResultPartitionID implements Comparable<IntermediateResultPartitionID>, ResultID, java.io.Serializable {
 
 	private static final long serialVersionUID = 1L;
+
+	private final IntermediateDataSetID intermediateDataSetID;
+	private final int partitionNum;
+
+	public IntermediateResultPartitionID() {
+		this.partitionNum = -1;
+		this.intermediateDataSetID = new IntermediateDataSetID(new AbstractID());
+	}
 
 	/**
 	 * Creates an new random intermediate result partition ID.
 	 */
-	public IntermediateResultPartitionID() {
-		super();
-	}
-
-	public IntermediateResultPartitionID(long lowerPart, long upperPart) {
-		super(lowerPart, upperPart);
+	public IntermediateResultPartitionID(IntermediateDataSetID intermediateDataSetID, int partitionNum) {
+		this.intermediateDataSetID = intermediateDataSetID;
+		this.partitionNum = partitionNum;
 	}
 
 	public void writeTo(ByteBuf buf) {
-		buf.writeLong(this.lowerPart);
-		buf.writeLong(this.upperPart);
+		buf.writeLong(intermediateDataSetID.getLowerPart());
+		buf.writeLong(intermediateDataSetID.getUpperPart());
+		buf.writeInt(partitionNum);
 	}
 
 	public static IntermediateResultPartitionID fromByteBuf(ByteBuf buf) {
 		long lower = buf.readLong();
 		long upper = buf.readLong();
-		return new IntermediateResultPartitionID(lower, upper);
+		int partitionNum = buf.readInt();
+		IntermediateDataSetID intermediateDataSetID = new IntermediateDataSetID(new AbstractID(lower, upper));
+		return new IntermediateResultPartitionID(intermediateDataSetID, partitionNum);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this) {
+			return true;
+		} else if (obj != null && obj.getClass() == getClass()) {
+			IntermediateResultPartitionID that = (IntermediateResultPartitionID) obj;
+			return that.intermediateDataSetID.getLowerPart() == this.intermediateDataSetID.getLowerPart()
+				&& that.intermediateDataSetID.getUpperPart() == this.intermediateDataSetID.getUpperPart()
+				&& that.partitionNum == this.partitionNum;
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		return ((int)  this.intermediateDataSetID.getLowerPart()) ^
+			((int) (this.intermediateDataSetID.getLowerPart() >>> 32)) ^
+			((int)  this.intermediateDataSetID.getUpperPart()) ^
+			((int) (this.intermediateDataSetID.getUpperPart() >>> 32)) ^
+			(this.partitionNum);
+	}
+
+	@Override
+	public String toString() {
+		return intermediateDataSetID.toString() + "#" + partitionNum;
+	}
+
+	@Override
+	public int compareTo(IntermediateResultPartitionID o) {
+		return 0;
 	}
 }
