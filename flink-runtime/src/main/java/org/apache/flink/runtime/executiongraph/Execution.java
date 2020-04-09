@@ -71,11 +71,14 @@ import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.SerializedValue;
 import org.apache.flink.util.function.ThrowingRunnable;
 
+import org.apache.lucene.util.RamUsageEstimator;
 import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -731,6 +734,7 @@ public class Execution implements AccessExecution, Archiveable<ArchivedExecution
 						attemptNumber, getAssignedResourceLocation()));
 			}
 
+			long beforeTime = System.nanoTime();
 			final TaskDeploymentDescriptor deployment = TaskDeploymentDescriptorFactory
 				.fromExecutionVertex(vertex, attemptNumber)
 				.createDeploymentDescriptor(
@@ -738,6 +742,23 @@ public class Execution implements AccessExecution, Archiveable<ArchivedExecution
 					slot.getPhysicalSlotNumber(),
 					taskRestore,
 					producedPartitions.values());
+			long afterTime = System.nanoTime();
+			LOG.info("BENCHMARK TDD_TIME before {} after {} total {}.", beforeTime, afterTime, afterTime - beforeTime);
+			ByteArrayOutputStream bos1 = new ByteArrayOutputStream();
+			ObjectOutputStream oos1 = new ObjectOutputStream(bos1);
+			oos1.writeObject(new ArrayList<>(producedPartitions.keySet()));
+			oos1.flush();
+			LOG.info("BENCHMARK ID_SERIAL_SIZE {}.", RamUsageEstimator.humanReadableUnits(bos1.toByteArray().length));
+			oos1.close();
+			bos1.close();
+			LOG.info("BENCHMARK ID_SIZE {}.", RamUsageEstimator.humanReadableUnits(RamUsageEstimator.sizeOfCollection(producedPartitions.keySet())));
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream oos = new ObjectOutputStream(bos);
+			oos.writeObject(deployment);
+			oos.flush();
+			LOG.info("BENCHMARK TDD_SERIAL_SIZE {}.", RamUsageEstimator.humanReadableUnits(bos.toByteArray().length));
+			oos.close();
+			bos.close();
 
 			// null taskRestore to let it be GC'ed
 			taskRestore = null;
