@@ -18,16 +18,16 @@
 
 package org.apache.flink.externalresource.gpu;
 
+import org.apache.flink.api.common.externalresource.DriverConfiguration;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriverFactory;
-import org.apache.flink.configuration.Configuration;
 
 /**
  * Factory for creating {@link GPUDriver}.
  */
 public class GPUDriverFactory implements ExternalResourceDriverFactory {
 	@Override
-	public ExternalResourceDriver createExternalResourceDriver(Configuration config) throws Exception {
-		return new GPUDriver(config);
+	public ExternalResourceDriver createExternalResourceDriver(DriverConfiguration config) throws Exception {
+		return new GPUDriver(config.getDriverSpecificConfiguration(), config.getTempDirs());
 	}
 }

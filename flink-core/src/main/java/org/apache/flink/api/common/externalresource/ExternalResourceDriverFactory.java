@@ -19,7 +19,6 @@
 package org.apache.flink.api.common.externalresource;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.configuration.Configuration;
 
 /**
  * Factory for {@link ExternalResourceDriver}. Instantiate a driver with configuration.
@@ -38,5 +37,5 @@ public interface ExternalResourceDriverFactory {
 	 * @return the driver for this external resource
 	 * @throws Exception if there is something wrong during the creation
 	 */
-	ExternalResourceDriver createExternalResourceDriver(Configuration config) throws Exception;
+	ExternalResourceDriver createExternalResourceDriver(DriverConfiguration config) throws Exception;
 }

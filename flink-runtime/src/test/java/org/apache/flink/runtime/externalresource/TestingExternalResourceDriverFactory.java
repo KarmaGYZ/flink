@@ -18,9 +18,9 @@
 
 package org.apache.flink.runtime.externalresource;
 
+import org.apache.flink.api.common.externalresource.DriverConfiguration;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriverFactory;
-import org.apache.flink.configuration.Configuration;
 
 /**
  * Implementation of {@link ExternalResourceDriverFactory} for testing purpose.
@@ -28,7 +28,7 @@ import org.apache.flink.configuration.Configuration;
 public class TestingExternalResourceDriverFactory implements ExternalResourceDriverFactory {
 
 	@Override
-	public ExternalResourceDriver createExternalResourceDriver(Configuration config) {
+	public ExternalResourceDriver createExternalResourceDriver(DriverConfiguration config) {
 		return new TestingExternalResourceDriver();
 	}
 }

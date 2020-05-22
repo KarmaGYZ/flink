@@ -19,7 +19,6 @@
 package org.apache.flink.externalresource.gpu;
 
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TestLogger;
 
@@ -51,7 +50,7 @@ public class GPUDriverTest extends TestLogger {
 		final Configuration config = new Configuration();
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, TESTING_DISCOVERY_SCRIPT_PATH);
 
-		final GPUDriver gpuDriver = new GPUDriver(config);
+		final GPUDriver gpuDriver = new GPUDriver(config, new String[0]);
 		final Set<GPUInfo> gpuResource = gpuDriver.retrieveResourceInfo(gpuAmount);
 
 		assertThat(gpuResource.size(), is(gpuAmount));
@@ -63,16 +62,18 @@ public class GPUDriverTest extends TestLogger {
 		final Configuration config = new Configuration();
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, TESTING_DISCOVERY_SCRIPT_PATH);
 
-		final GPUDriver gpuDriver = new GPUDriver(config);
+		final GPUDriver gpuDriver = new GPUDriver(config, new String[0]);
 		gpuDriver.retrieveResourceInfo(gpuAmount);
 	}
 
-	@Test(expected = IllegalConfigurationException.class)
-	public void testGPUDriverWithIllegalConfigTestScript() throws Exception {
+	@Test
+	public void testGPUDriverExtractDefaultScript() throws Exception {
 		final Configuration config = new Configuration();
-		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, " ");
 
-		new GPUDriver(config);
+		File tempDir = TEMP_FOLDER.newFolder();
+		GPUDriver gpuDriver = new GPUDriver(config, new String[]{tempDir.getAbsolutePath()});
+
+		assertTrue(gpuDriver.getDiscoveryScriptFile().exists());
 	}
 
 	@Test(expected = FileNotFoundException.class)
@@ -80,7 +81,7 @@ public class GPUDriverTest extends TestLogger {
 		final Configuration config = new Configuration();
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, "invalid/path");
 
-		new GPUDriver(config);
+		new GPUDriver(config, new String[0]);
 	}
 
 	@Test(expected = FlinkException.class)
@@ -91,7 +92,7 @@ public class GPUDriverTest extends TestLogger {
 
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, inexecutableFile.getAbsolutePath());
 
-		new GPUDriver(config);
+		new GPUDriver(config, new String[0]);
 	}
 
 	@Test(expected = FlinkException.class)
@@ -100,7 +101,7 @@ public class GPUDriverTest extends TestLogger {
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_PATH, TESTING_DISCOVERY_SCRIPT_PATH);
 		config.setString(GPUDriver.DISCOVERY_SCRIPT_ARG, "--exit-non-zero");
 
-		final GPUDriver gpuDriver = new GPUDriver(config);
+		final GPUDriver gpuDriver = new GPUDriver(config, new String[0]);
 		gpuDriver.retrieveResourceInfo(1);
 	}
 }

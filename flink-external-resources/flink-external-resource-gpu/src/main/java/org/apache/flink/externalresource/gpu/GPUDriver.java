@@ -23,12 +23,12 @@ import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.ExternalResourceOptions;
-import org.apache.flink.configuration.IllegalConfigurationException;
+import org.apache.flink.util.AbstractID;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +61,8 @@ class GPUDriver implements ExternalResourceDriver {
 	static final ConfigOption<String> DISCOVERY_SCRIPT_PATH =
 		key("discovery-script.path")
 			.stringType()
-			.defaultValue(String.format("%s/external-resource-gpu/nvidia-gpu-discovery.sh", ConfigConstants.DEFAULT_FLINK_PLUGINS_DIRS));
+			.noDefaultValue();
+//			.defaultValue(String.format("%s/external-resource-gpu/nvidia-gpu-discovery.sh", ConfigConstants.DEFAULT_FLINK_PLUGINS_DIRS));
 
 	@VisibleForTesting
 	static final ConfigOption<String> DISCOVERY_SCRIPT_ARG =
@@ -72,14 +73,20 @@ class GPUDriver implements ExternalResourceDriver {
 	private final File discoveryScriptFile;
 	private final String args;
 
-	GPUDriver(Configuration config) throws Exception {
+	GPUDriver(Configuration config, String[] tempDirs) throws Exception {
 		final String discoveryScriptPathStr = config.getString(DISCOVERY_SCRIPT_PATH);
+		Path discoveryScriptPath;
 		if (StringUtils.isNullOrWhitespaceOnly(discoveryScriptPathStr)) {
-			throw new IllegalConfigurationException(
-				String.format("GPU discovery script ('%s') is not configured.", ExternalResourceOptions.genericKeyWithSuffix(DISCOVERY_SCRIPT_PATH.key())));
+			final File tempDirParent = new File(tempDirs[0]).getAbsoluteFile();
+			final File gpuDriverFolder = new File(tempDirParent, "gpu-driver-" + new AbstractID());
+			if (!gpuDriverFolder.mkdirs()) {
+				throw new FlinkException(String.format("Could not make temporary directory %s for GPUDriver.", gpuDriverFolder.getAbsolutePath()));
+			}
+			discoveryScriptPath = prepareDefaultDiscoveryScript(gpuDriverFolder);
+		} else {
+			discoveryScriptPath = Paths.get(discoveryScriptPathStr);
 		}
 
-		Path discoveryScriptPath = Paths.get(discoveryScriptPathStr);
 		if (!discoveryScriptPath.isAbsolute()) {
 			discoveryScriptPath = Paths.get(System.getenv().getOrDefault(ConfigConstants.ENV_FLINK_HOME_DIR, "."), discoveryScriptPathStr);
 		}
@@ -142,5 +149,20 @@ class GPUDriver implements ExternalResourceDriver {
 		} finally {
 			process.destroyForcibly();
 		}
+	}
+
+	private Path prepareDefaultDiscoveryScript(File gpuDriverFolder) throws Exception {
+		final File defaultGPUDiscoveryScript = new File(gpuDriverFolder.getAbsolutePath() + "/nvidia-gpu-discovery.sh");
+		final File defaultDiscoveryCommonScript = new File(gpuDriverFolder.getAbsolutePath() + "/gpu-discovery-common.sh");
+		FileUtils.copyURLToFile(this.getClass().getResource("/nvidia-gpu-discovery.sh"), defaultGPUDiscoveryScript);
+		FileUtils.copyURLToFile(this.getClass().getResource("/gpu-discovery-common.sh"), defaultDiscoveryCommonScript);
+		defaultGPUDiscoveryScript.setExecutable(true, false);
+		defaultDiscoveryCommonScript.setExecutable(true, false);
+		return defaultGPUDiscoveryScript.toPath();
+	}
+
+	@VisibleForTesting
+	File getDiscoveryScriptFile() {
+		return discoveryScriptFile;
 	}
 }

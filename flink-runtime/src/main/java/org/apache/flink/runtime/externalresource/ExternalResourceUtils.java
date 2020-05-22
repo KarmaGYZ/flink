@@ -18,11 +18,13 @@
 
 package org.apache.flink.runtime.externalresource;
 
+import org.apache.flink.api.common.externalresource.DriverConfiguration;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriverFactory;
 import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.DelegatingConfiguration;
 import org.apache.flink.configuration.ExternalResourceOptions;
 import org.apache.flink.core.plugin.PluginManager;
@@ -175,7 +177,8 @@ public class ExternalResourceUtils {
 				DelegatingConfiguration delegatingConfiguration =
 					new DelegatingConfiguration(config, ExternalResourceOptions.getExternalResourceParamConfigPrefixForResource(resourceName));
 				try {
-					externalResourceDrivers.put(resourceName, externalResourceDriverFactory.createExternalResourceDriver(delegatingConfiguration));
+					externalResourceDrivers.put(resourceName, externalResourceDriverFactory
+						.createExternalResourceDriver(new DriverConfiguration(ConfigurationUtils.parseTempDirectories(config), delegatingConfiguration)));
 					LOG.info("Add external resources driver for {}.", resourceName);
 				} catch (Exception e) {
 					LOG.warn("Could not instantiate driver with factory {} for {}. {}", driverFactoryClassName, resourceName, e);
