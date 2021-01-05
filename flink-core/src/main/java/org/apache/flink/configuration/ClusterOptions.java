@@ -115,7 +115,7 @@ public class ClusterOptions {
     public static final ConfigOption<Boolean> ENABLE_FINE_GRAINED_RESOURCE_MANAGEMENT =
             ConfigOptions.key("cluster.fine-grained-resource-management.enabled")
                     .booleanType()
-                    .defaultValue(false)
+                    .defaultValue(true)
                     .withDescription(
                             "Defines whether the cluster uses fine-grained resource management.");
 
