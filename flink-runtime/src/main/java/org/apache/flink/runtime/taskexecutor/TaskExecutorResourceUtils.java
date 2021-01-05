@@ -134,11 +134,13 @@ public class TaskExecutorResourceUtils {
     public static Configuration adjustForLocalExecution(Configuration config) {
         UNUSED_CONFIG_OPTIONS.forEach(option -> warnOptionHasNoEffectIfSet(config, option));
 
-        setConfigOptionToPassedMaxIfNotSet(config, TaskManagerOptions.CPU_CORES, Double.MAX_VALUE);
+        setConfigOptionToPassedMaxIfNotSet(config, TaskManagerOptions.CPU_CORES, 1000000.0);
         setConfigOptionToPassedMaxIfNotSet(
-                config, TaskManagerOptions.TASK_HEAP_MEMORY, MemorySize.MAX_VALUE);
+                config, TaskManagerOptions.TASK_HEAP_MEMORY, MemorySize.ofMebiBytes(1024 * 1024));
         setConfigOptionToPassedMaxIfNotSet(
-                config, TaskManagerOptions.TASK_OFF_HEAP_MEMORY, MemorySize.MAX_VALUE);
+                config,
+                TaskManagerOptions.TASK_OFF_HEAP_MEMORY,
+                MemorySize.ofMebiBytes(1024 * 1024));
 
         adjustNetworkMemoryForLocalExecution(config);
         setConfigOptionToDefaultIfNotSet(
