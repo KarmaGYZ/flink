@@ -121,7 +121,8 @@ public class ClusterOptions {
 
     public static boolean isFineGrainedResourceManagementEnabled(Configuration configuration) {
         return isDeclarativeResourceManagementEnabled(configuration)
-                && configuration.get(ENABLE_FINE_GRAINED_RESOURCE_MANAGEMENT);
+                && (configuration.get(ENABLE_FINE_GRAINED_RESOURCE_MANAGEMENT)
+                        || System.getProperties().containsKey("flink.tests.enable-fine-grained"));
     }
 
     public static boolean isDeclarativeResourceManagementEnabled(Configuration configuration) {
