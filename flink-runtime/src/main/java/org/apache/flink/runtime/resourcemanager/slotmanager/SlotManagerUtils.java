@@ -33,4 +33,15 @@ public class SlotManagerUtils {
                 .setNetworkMemory(workerResourceSpec.getNetworkMemSize().divide(numSlotsPerWorker))
                 .build();
     }
+
+    public static ResourceProfile generateDefaultTaskManagerResourceProfile(
+            WorkerResourceSpec workerResourceSpec) {
+        return ResourceProfile.newBuilder()
+                .setCpuCores(workerResourceSpec.getCpuCores())
+                .setTaskHeapMemory(workerResourceSpec.getTaskHeapSize())
+                .setTaskOffHeapMemory(workerResourceSpec.getTaskOffHeapSize())
+                .setManagedMemory(workerResourceSpec.getManagedMemSize())
+                .setNetworkMemory(workerResourceSpec.getNetworkMemSize())
+                .build();
+    }
 }
