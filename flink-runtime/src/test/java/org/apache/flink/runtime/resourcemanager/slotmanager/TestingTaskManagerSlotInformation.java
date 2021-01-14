@@ -18,6 +18,8 @@
 
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
+import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.clusterframework.types.SlotID;
@@ -30,6 +32,8 @@ public final class TestingTaskManagerSlotInformation implements TaskManagerSlotI
 
     private final SlotID slotId;
     private final InstanceID instanceId;
+    private final AllocationID allocationId;
+    private final JobID jobId;
     private final ResourceProfile resourceProfile;
     private final TaskExecutorConnection taskExecutorConnection =
             new TaskExecutorConnection(
@@ -37,8 +41,14 @@ public final class TestingTaskManagerSlotInformation implements TaskManagerSlotI
                     new TestingTaskExecutorGatewayBuilder().createTestingTaskExecutorGateway());
 
     private TestingTaskManagerSlotInformation(
-            SlotID slotId, InstanceID instanceId, ResourceProfile resourceProfile) {
+            SlotID slotId,
+            AllocationID allocationId,
+            JobID jobId,
+            InstanceID instanceId,
+            ResourceProfile resourceProfile) {
         this.slotId = slotId;
+        this.allocationId = allocationId;
+        this.jobId = jobId;
         this.instanceId = instanceId;
         this.resourceProfile = resourceProfile;
     }
@@ -46,6 +56,16 @@ public final class TestingTaskManagerSlotInformation implements TaskManagerSlotI
     @Override
     public SlotID getSlotId() {
         return slotId;
+    }
+
+    @Override
+    public JobID getJobId() {
+        return jobId;
+    }
+
+    @Override
+    public AllocationID getAllocationId() {
+        return allocationId;
     }
 
     @Override
@@ -74,6 +94,8 @@ public final class TestingTaskManagerSlotInformation implements TaskManagerSlotI
 
     static class Builder {
         private SlotID slotId = new SlotID(ResourceID.generate(), 0);
+        private AllocationID allocationId = new AllocationID();
+        private JobID jobId = new JobID();
         private InstanceID instanceId = new InstanceID();
         private ResourceProfile resourceProfile = ResourceProfile.ANY;
 
@@ -92,8 +114,19 @@ public final class TestingTaskManagerSlotInformation implements TaskManagerSlotI
             return this;
         }
 
+        public Builder setAllocationId(AllocationID allocationId) {
+            this.allocationId = allocationId;
+            return this;
+        }
+
+        public Builder setJobId(JobID jobId) {
+            this.jobId = jobId;
+            return this;
+        }
+
         public TestingTaskManagerSlotInformation build() {
-            return new TestingTaskManagerSlotInformation(slotId, instanceId, resourceProfile);
+            return new TestingTaskManagerSlotInformation(
+                    slotId, allocationId, jobId, instanceId, resourceProfile);
         }
     }
 }
