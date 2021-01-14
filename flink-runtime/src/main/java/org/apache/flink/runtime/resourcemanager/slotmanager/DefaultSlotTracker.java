@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -49,8 +48,8 @@ public class DefaultSlotTracker implements SlotTracker {
     /** Index of all currently free slots. */
     private final Map<SlotID, DeclarativeTaskManagerSlot> freeSlots = new LinkedHashMap<>();
 
-    private final MultiSlotStatusUpdateListener slotStatusUpdateListeners =
-            new MultiSlotStatusUpdateListener();
+    private final SlotStatusUpdateListener.MultiSlotStatusUpdateListener slotStatusUpdateListeners =
+            new SlotStatusUpdateListener.MultiSlotStatusUpdateListener();
 
     private final SlotStatusStateReconciler slotStatusStateReconciler =
             new SlotStatusStateReconciler(
@@ -276,32 +275,6 @@ public class DefaultSlotTracker implements SlotTracker {
                         }
                 }
             }
-        }
-    }
-
-    private static class MultiSlotStatusUpdateListener implements SlotStatusUpdateListener {
-
-        private final Collection<SlotStatusUpdateListener> listeners = new ArrayList<>();
-
-        public void registerSlotStatusUpdateListener(
-                SlotStatusUpdateListener slotStatusUpdateListener) {
-            listeners.add(slotStatusUpdateListener);
-        }
-
-        @Override
-        public void notifySlotStatusChange(
-                TaskManagerSlotInformation slot,
-                SlotState previous,
-                SlotState current,
-                JobID jobId) {
-            LOG.trace(
-                    "Slot {} transitioned from {} to {} for job {}.",
-                    slot.getSlotId(),
-                    previous,
-                    current,
-                    jobId);
-            listeners.forEach(
-                    listeners -> listeners.notifySlotStatusChange(slot, previous, current, jobId));
         }
     }
 }

@@ -19,6 +19,9 @@ package org.apache.flink.runtime.resourcemanager.slotmanager;
 
 import org.apache.flink.api.common.JobID;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * Interface for components that want to listen to updates to the status of a slot.
  *
@@ -42,4 +45,24 @@ interface SlotStatusUpdateListener {
      */
     void notifySlotStatusChange(
             TaskManagerSlotInformation slot, SlotState previous, SlotState current, JobID jobId);
+
+    class MultiSlotStatusUpdateListener implements SlotStatusUpdateListener {
+
+        private final Collection<SlotStatusUpdateListener> listeners = new ArrayList<>();
+
+        public void registerSlotStatusUpdateListener(
+                SlotStatusUpdateListener slotStatusUpdateListener) {
+            listeners.add(slotStatusUpdateListener);
+        }
+
+        @Override
+        public void notifySlotStatusChange(
+                TaskManagerSlotInformation slot,
+                SlotState previous,
+                SlotState current,
+                JobID jobID) {
+            listeners.forEach(
+                    listeners -> listeners.notifySlotStatusChange(slot, previous, current, jobID));
+        }
+    }
 }
