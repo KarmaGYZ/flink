@@ -128,6 +128,7 @@ public class SlotManagerBuilder {
                         taskManagerTimeout,
                         waitResultConsumedBeforeRelease,
                         slotMatchingStrategy,
+                        AnyMatchingTaskExecutorMatchingStrategy.INSTANCE,
                         defaultWorkerResourceSpec,
                         numSlotsPerWorker,
                         maxSlotNum,

@@ -43,6 +43,7 @@ public class SlotManagerConfiguration {
     private final Time taskManagerTimeout;
     private final boolean waitResultConsumedBeforeRelease;
     private final SlotMatchingStrategy slotMatchingStrategy;
+    private final TaskExecutorMatchingStrategy taskExecutorMatchingStrategy;
     private final WorkerResourceSpec defaultWorkerResourceSpec;
     private final int numSlotsPerWorker;
     private final int maxSlotNum;
@@ -54,6 +55,7 @@ public class SlotManagerConfiguration {
             Time taskManagerTimeout,
             boolean waitResultConsumedBeforeRelease,
             SlotMatchingStrategy slotMatchingStrategy,
+            TaskExecutorMatchingStrategy taskExecutorMatchingStrategy,
             WorkerResourceSpec defaultWorkerResourceSpec,
             int numSlotsPerWorker,
             int maxSlotNum,
@@ -64,6 +66,8 @@ public class SlotManagerConfiguration {
         this.taskManagerTimeout = Preconditions.checkNotNull(taskManagerTimeout);
         this.waitResultConsumedBeforeRelease = waitResultConsumedBeforeRelease;
         this.slotMatchingStrategy = Preconditions.checkNotNull(slotMatchingStrategy);
+        this.taskExecutorMatchingStrategy =
+                Preconditions.checkNotNull(taskExecutorMatchingStrategy);
         this.defaultWorkerResourceSpec = Preconditions.checkNotNull(defaultWorkerResourceSpec);
         Preconditions.checkState(numSlotsPerWorker > 0);
         Preconditions.checkState(maxSlotNum > 0);
@@ -91,6 +95,10 @@ public class SlotManagerConfiguration {
 
     public SlotMatchingStrategy getSlotMatchingStrategy() {
         return slotMatchingStrategy;
+    }
+
+    public TaskExecutorMatchingStrategy getTaskExecutorMatchingStrategy() {
+        return taskExecutorMatchingStrategy;
     }
 
     public WorkerResourceSpec getDefaultWorkerResourceSpec() {
@@ -140,6 +148,10 @@ public class SlotManagerConfiguration {
                 evenlySpreadOutSlots
                         ? LeastUtilizationSlotMatchingStrategy.INSTANCE
                         : AnyMatchingSlotMatchingStrategy.INSTANCE;
+        final TaskExecutorMatchingStrategy taskExecutorMatchingStrategy =
+                evenlySpreadOutSlots
+                        ? LeastAllocateSlotsTaskExecutorMatchingStrategy.INSTANCE
+                        : AnyMatchingTaskExecutorMatchingStrategy.INSTANCE;
 
         int numSlotsPerWorker = configuration.getInteger(TaskManagerOptions.NUM_TASK_SLOTS);
 
@@ -154,6 +166,7 @@ public class SlotManagerConfiguration {
                 taskManagerTimeout,
                 waitResultConsumedBeforeRelease,
                 slotMatchingStrategy,
+                taskExecutorMatchingStrategy,
                 defaultWorkerResourceSpec,
                 numSlotsPerWorker,
                 maxSlotNum,

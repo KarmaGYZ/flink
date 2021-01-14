@@ -30,6 +30,7 @@ import org.apache.flink.runtime.io.network.partition.NoOpResourceManagerPartitio
 import org.apache.flink.runtime.leaderelection.TestingLeaderElectionService;
 import org.apache.flink.runtime.metrics.groups.UnregisteredMetricGroups;
 import org.apache.flink.runtime.resourcemanager.slotmanager.AnyMatchingSlotMatchingStrategy;
+import org.apache.flink.runtime.resourcemanager.slotmanager.AnyMatchingTaskExecutorMatchingStrategy;
 import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManagerConfiguration;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.rpc.RpcUtils;
@@ -79,6 +80,7 @@ public class ResourceManagerHATest extends TestLogger {
                                 TestingUtils.infiniteTime(),
                                 true,
                                 AnyMatchingSlotMatchingStrategy.INSTANCE,
+                                AnyMatchingTaskExecutorMatchingStrategy.INSTANCE,
                                 WorkerResourceSpec.ZERO,
                                 1,
                                 ResourceManagerOptions.MAX_SLOT_NUM.defaultValue(),
