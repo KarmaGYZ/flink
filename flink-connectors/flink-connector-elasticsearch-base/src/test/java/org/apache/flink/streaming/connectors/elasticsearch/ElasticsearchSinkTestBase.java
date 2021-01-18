@@ -83,7 +83,7 @@ public abstract class ElasticsearchSinkTestBase<C extends AutoCloseable, A>
         DataStreamSource<Tuple2<Integer, String>> source =
                 env.addSource(new SourceSinkDataTestKit.TestDataSourceFunction());
 
-        source.addSink(
+        source.sinkTo(
                 createElasticsearchSinkForEmbeddedNode(
                         1, getClusterName(), functionFactory.apply(index)));
 
@@ -138,7 +138,7 @@ public abstract class ElasticsearchSinkTestBase<C extends AutoCloseable, A>
         DataStreamSource<Tuple2<Integer, String>> source =
                 env.addSource(new SourceSinkDataTestKit.TestDataSourceFunction());
 
-        source.addSink(
+        source.sinkTo(
                 createElasticsearchSinkForNode(
                         1,
                         "invalid-cluster-name",
@@ -162,7 +162,7 @@ public abstract class ElasticsearchSinkTestBase<C extends AutoCloseable, A>
         Map<String, String> userConfig = new HashMap<>();
         userConfig.put("cluster.name", clusterName);
         userConfig.put(
-                ElasticsearchSinkBase.CONFIG_KEY_BULK_FLUSH_MAX_ACTIONS,
+                ElasticsearchWriter.CONFIG_KEY_BULK_FLUSH_MAX_ACTIONS,
                 String.valueOf(bulkFlushMaxActions));
         userConfig.put("transport.tcp.connect_timeout", "5s");
 

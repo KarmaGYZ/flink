@@ -18,11 +18,18 @@
 
 package org.apache.flink.streaming.connectors.elasticsearch.table;
 
+import org.apache.flink.api.common.JobExecutionResult;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.api.dag.Transformation;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSink;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.streaming.connectors.elasticsearch.ActionRequestFailureHandler;
-import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkBase;
+import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchWriter;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.streaming.connectors.elasticsearch.util.NoOpFailureHandler;
 import org.apache.flink.streaming.connectors.elasticsearch7.ElasticsearchSink;
@@ -32,6 +39,7 @@ import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.EncodingFormat;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.DataType;
 
 import org.apache.http.HttpHost;
@@ -39,6 +47,7 @@ import org.elasticsearch.action.ActionRequest;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.doAnswer;
@@ -74,12 +83,16 @@ public class Elasticsearch7DynamicSinkTest {
                         schema,
                         provider);
 
-        testSink.getSinkRuntimeProvider(new MockSinkContext()).createSinkFunction();
+        testSink.getSinkRuntimeProvider(new MockSinkContext())
+                .consumeDataStream(
+                        new DataStreamMock(
+                                new StreamExecutionEnvironmentMock(),
+                                InternalTypeInfo.of(schema.toRowDataType().getLogicalType())));
 
         verify(provider.builderSpy).setFailureHandler(new DummyFailureHandler());
         verify(provider.builderSpy).setBulkFlushBackoff(true);
         verify(provider.builderSpy)
-                .setBulkFlushBackoffType(ElasticsearchSinkBase.FlushBackoffType.EXPONENTIAL);
+                .setBulkFlushBackoffType(ElasticsearchWriter.FlushBackoffType.EXPONENTIAL);
         verify(provider.builderSpy).setBulkFlushBackoffDelay(123);
         verify(provider.builderSpy).setBulkFlushBackoffRetries(3);
         verify(provider.builderSpy).setBulkFlushInterval(100);
@@ -109,7 +122,11 @@ public class Elasticsearch7DynamicSinkTest {
                         schema,
                         provider);
 
-        testSink.getSinkRuntimeProvider(new MockSinkContext()).createSinkFunction();
+        testSink.getSinkRuntimeProvider(new MockSinkContext())
+                .consumeDataStream(
+                        new DataStreamMock(
+                                new StreamExecutionEnvironmentMock(),
+                                InternalTypeInfo.of(schema.toRowDataType().getLogicalType())));
 
         verify(provider.builderSpy).setFailureHandler(new NoOpFailureHandler());
         verify(provider.builderSpy).setBulkFlushBackoff(false);
@@ -141,7 +158,11 @@ public class Elasticsearch7DynamicSinkTest {
                         schema,
                         provider);
 
-        testSink.getSinkRuntimeProvider(new MockSinkContext()).createSinkFunction();
+        testSink.getSinkRuntimeProvider(new MockSinkContext())
+                .consumeDataStream(
+                        new DataStreamMock(
+                                new StreamExecutionEnvironmentMock(),
+                                InternalTypeInfo.of(schema.toRowDataType().getLogicalType())));
 
         verify(provider.builderSpy).setFailureHandler(new NoOpFailureHandler());
         verify(provider.builderSpy).setBulkFlushBackoff(false);
@@ -250,6 +271,48 @@ public class Elasticsearch7DynamicSinkTest {
         public DynamicTableSink.DataStructureConverter createDataStructureConverter(
                 DataType consumedDataType) {
             return null;
+        }
+    }
+
+    private static class DataStreamMock extends DataStream<RowData> {
+
+        public Sink<RowData, ?, ?, ?> sink;
+
+        public DataStreamMock(
+                StreamExecutionEnvironment environment, TypeInformation<RowData> outType) {
+            super(environment, new TransformationMock("name", outType, 1));
+        }
+
+        @Override
+        public DataStreamSink<RowData> sinkTo(Sink<RowData, ?, ?, ?> sink) {
+            this.sink = sink;
+            return super.sinkTo(sink);
+        }
+    }
+
+    private static class TransformationMock extends Transformation<RowData> {
+
+        public TransformationMock(
+                String name, TypeInformation<RowData> outputType, int parallelism) {
+            super(name, outputType, parallelism);
+        }
+
+        @Override
+        public List<Transformation<?>> getTransitivePredecessors() {
+            return null;
+        }
+
+        @Override
+        public List<Transformation<?>> getInputs() {
+            return Collections.emptyList();
+        }
+    }
+
+    private static class StreamExecutionEnvironmentMock extends StreamExecutionEnvironment {
+
+        @Override
+        public JobExecutionResult execute(StreamGraph streamGraph) throws Exception {
+            throw new UnsupportedOperationException();
         }
     }
 

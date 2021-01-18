@@ -18,7 +18,7 @@
 package org.apache.flink.streaming.tests;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -77,12 +77,12 @@ public class Elasticsearch5SinkExample {
         List<InetSocketAddress> transports = new ArrayList<>();
         transports.add(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 9300));
 
-        source.addSink(
+        source.sinkTo(
                 new ElasticsearchSink<>(
                         userConfig,
                         transports,
                         (Tuple2<String, String> element,
-                                RuntimeContext ctx,
+                                Sink.InitContext ctx,
                                 RequestIndexer indexer) -> {
                             indexer.add(createIndexRequest(element.f1, parameterTool));
                             indexer.add(createUpdateRequest(element, parameterTool));

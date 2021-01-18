@@ -331,13 +331,13 @@ public abstract class ElasticsearchUpsertTableSinkFactoryBase
                                 case CONNECTOR_BULK_FLUSH_BACKOFF_TYPE_VALUE_CONSTANT:
                                     options.put(
                                             SinkOption.BULK_FLUSH_BACKOFF_TYPE,
-                                            ElasticsearchSinkBase.FlushBackoffType.CONSTANT
+                                            ElasticsearchWriter.FlushBackoffType.CONSTANT
                                                     .toString());
                                     break;
                                 case CONNECTOR_BULK_FLUSH_BACKOFF_TYPE_VALUE_EXPONENTIAL:
                                     options.put(
                                             SinkOption.BULK_FLUSH_BACKOFF_TYPE,
-                                            ElasticsearchSinkBase.FlushBackoffType.EXPONENTIAL
+                                            ElasticsearchWriter.FlushBackoffType.EXPONENTIAL
                                                     .toString());
                                     break;
                                 default:

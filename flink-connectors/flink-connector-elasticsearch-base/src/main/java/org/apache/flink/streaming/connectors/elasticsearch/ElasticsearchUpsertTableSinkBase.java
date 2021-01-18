@@ -19,14 +19,13 @@
 package org.apache.flink.streaming.connectors.elasticsearch;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.index.IndexGenerator;
 import org.apache.flink.streaming.connectors.elasticsearch.index.IndexGeneratorFactory;
 import org.apache.flink.table.api.TableSchema;
@@ -179,10 +178,10 @@ public abstract class ElasticsearchUpsertTableSinkBase implements UpsertStreamTa
                         contentType,
                         requestFactory,
                         keyFieldIndices);
-        final SinkFunction<Tuple2<Boolean, Row>> sinkFunction =
+        final Sink<Tuple2<Boolean, Row>, Void, Void, Void> sink =
                 createSinkFunction(hosts, failureHandler, sinkOptions, upsertFunction);
         return dataStream
-                .addSink(sinkFunction)
+                .sinkTo(sink)
                 .setParallelism(dataStream.getParallelism())
                 .name(TableConnectorUtils.generateRuntimeName(this.getClass(), getFieldNames()));
     }
@@ -290,7 +289,7 @@ public abstract class ElasticsearchUpsertTableSinkBase implements UpsertStreamTa
             Map<SinkOption, String> sinkOptions,
             RequestFactory requestFactory);
 
-    protected abstract SinkFunction<Tuple2<Boolean, Row>> createSinkFunction(
+    protected abstract Sink<Tuple2<Boolean, Row>, Void, Void, Void> createSinkFunction(
             List<Host> hosts,
             ActionRequestFailureHandler failureHandler,
             Map<SinkOption, String> sinkOptions,
@@ -437,7 +436,7 @@ public abstract class ElasticsearchUpsertTableSinkBase implements UpsertStreamTa
 
         @Override
         public void process(
-                Tuple2<Boolean, Row> element, RuntimeContext ctx, RequestIndexer indexer) {
+                Tuple2<Boolean, Row> element, Sink.InitContext ctx, RequestIndexer indexer) {
 
             final String formattedIndex = indexGenerator.generate(element.f1);
             if (element.f0) {

@@ -21,12 +21,12 @@ package org.apache.flink.streaming.connectors.elasticsearch7;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.MemorySize;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.ActionRequestFailureHandler;
-import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkBase;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchUpsertTableSinkBase;
+import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchWriter;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.types.Row;
 
@@ -147,7 +147,7 @@ public class Elasticsearch7UpsertTableSink extends ElasticsearchUpsertTableSinkB
     }
 
     @Override
-    protected SinkFunction<Tuple2<Boolean, Row>> createSinkFunction(
+    protected Sink<Tuple2<Boolean, Row>, Void, Void, Void> createSinkFunction(
             List<Host> hosts,
             ActionRequestFailureHandler failureHandler,
             Map<SinkOption, String> sinkOptions,
@@ -179,7 +179,7 @@ public class Elasticsearch7UpsertTableSink extends ElasticsearchUpsertTableSinkB
                 .ifPresent(
                         v ->
                                 builder.setBulkFlushBackoffType(
-                                        ElasticsearchSinkBase.FlushBackoffType.valueOf(v)));
+                                        ElasticsearchWriter.FlushBackoffType.valueOf(v)));
 
         Optional.ofNullable(sinkOptions.get(BULK_FLUSH_BACKOFF_RETRIES))
                 .ifPresent(v -> builder.setBulkFlushBackoffRetries(Integer.valueOf(v)));

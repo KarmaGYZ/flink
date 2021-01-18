@@ -26,8 +26,8 @@ import org.apache.flink.streaming.connectors.elasticsearch7.RestClientFactory;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.EncodingFormat;
+import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.StringUtils;
@@ -114,8 +114,8 @@ final class Elasticsearch7DynamicSink implements DynamicTableSink {
     }
 
     @Override
-    public SinkFunctionProvider getSinkRuntimeProvider(Context context) {
-        return () -> {
+    public DataStreamSinkProvider getSinkRuntimeProvider(Context context) {
+        return dataStream -> {
             SerializationSchema<RowData> format =
                     this.format.createRuntimeEncoder(context, schema.toRowDataType());
 
@@ -162,7 +162,7 @@ final class Elasticsearch7DynamicSink implements DynamicTableSink {
                 sink.disableFlushOnCheckpoint();
             }
 
-            return sink;
+            return dataStream.sinkTo(sink);
         };
     }
 

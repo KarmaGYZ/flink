@@ -22,7 +22,7 @@ import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.MemorySize;
 import org.apache.flink.configuration.description.Description;
-import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkBase;
+import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchWriter;
 
 import java.time.Duration;
 import java.util.List;
@@ -34,8 +34,8 @@ import static org.apache.flink.configuration.description.TextElement.text;
  */
 public class ElasticsearchOptions {
     /**
-     * Backoff strategy. Extends {@link ElasticsearchSinkBase.FlushBackoffType} with {@code
-     * DISABLED} option.
+     * Backoff strategy. Extends {@link ElasticsearchWriter.FlushBackoffType} with {@code DISABLED}
+     * option.
      */
     public enum BackOffType {
         DISABLED,

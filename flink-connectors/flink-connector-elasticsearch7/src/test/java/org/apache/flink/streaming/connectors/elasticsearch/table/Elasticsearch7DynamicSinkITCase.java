@@ -21,15 +21,13 @@ package org.apache.flink.streaming.connectors.elasticsearch.table;
 import org.apache.flink.api.common.time.Deadline;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.connector.sink.DataStreamSinkProvider;
 import org.apache.flink.table.connector.sink.DynamicTableSink;
-import org.apache.flink.table.connector.sink.SinkFunctionProvider;
 import org.apache.flink.table.data.GenericRowData;
-import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.DataType;
@@ -104,8 +102,8 @@ public class Elasticsearch7DynamicSinkITCase {
         String index = "writing-documents";
         Elasticsearch7DynamicSinkFactory sinkFactory = new Elasticsearch7DynamicSinkFactory();
 
-        SinkFunctionProvider sinkRuntimeProvider =
-                (SinkFunctionProvider)
+        DataStreamSinkProvider sinkRuntimeProvider =
+                (DataStreamSinkProvider)
                         sinkFactory
                                 .createDynamicTableSink(
                                         context()
@@ -124,11 +122,10 @@ public class Elasticsearch7DynamicSinkITCase {
                                                 .build())
                                 .getSinkRuntimeProvider(new MockContext());
 
-        SinkFunction<RowData> sinkFunction = sinkRuntimeProvider.createSinkFunction();
         StreamExecutionEnvironment environment =
                 StreamExecutionEnvironment.getExecutionEnvironment();
         rowData.setRowKind(RowKind.UPDATE_AFTER);
-        environment.<RowData>fromElements(rowData).addSink(sinkFunction);
+        sinkRuntimeProvider.consumeDataStream(environment.fromElements(rowData));
         environment.execute();
 
         Client client = getClient();

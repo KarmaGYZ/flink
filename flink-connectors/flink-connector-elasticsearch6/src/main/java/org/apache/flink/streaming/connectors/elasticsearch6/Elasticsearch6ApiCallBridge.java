@@ -19,7 +19,7 @@ package org.apache.flink.streaming.connectors.elasticsearch6;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchApiCallBridge;
-import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkBase;
+import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchWriter;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.util.Preconditions;
 
@@ -91,7 +91,7 @@ public class Elasticsearch6ApiCallBridge
     @Override
     public void configureBulkProcessorBackoff(
             BulkProcessor.Builder builder,
-            @Nullable ElasticsearchSinkBase.BulkFlushBackoffPolicy flushBackoffPolicy) {
+            @Nullable ElasticsearchWriter.BulkFlushBackoffPolicy flushBackoffPolicy) {
 
         BackoffPolicy backoffPolicy;
         if (flushBackoffPolicy != null) {

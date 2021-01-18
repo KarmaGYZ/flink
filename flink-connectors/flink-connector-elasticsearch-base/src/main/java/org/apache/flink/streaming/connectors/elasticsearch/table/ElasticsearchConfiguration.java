@@ -21,7 +21,7 @@ package org.apache.flink.streaming.connectors.elasticsearch.table;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.connectors.elasticsearch.ActionRequestFailureHandler;
-import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkBase;
+import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchWriter;
 import org.apache.flink.streaming.connectors.elasticsearch.util.IgnoringFailureHandler;
 import org.apache.flink.streaming.connectors.elasticsearch.util.NoOpFailureHandler;
 import org.apache.flink.streaming.connectors.elasticsearch.util.RetryRejectedExecutionFailureHandler;
@@ -114,12 +114,12 @@ class ElasticsearchConfiguration {
                 != ElasticsearchOptions.BackOffType.DISABLED;
     }
 
-    public Optional<ElasticsearchSinkBase.FlushBackoffType> getBulkFlushBackoffType() {
+    public Optional<ElasticsearchWriter.FlushBackoffType> getBulkFlushBackoffType() {
         switch (config.get(BULK_FLUSH_BACKOFF_TYPE_OPTION)) {
             case CONSTANT:
-                return Optional.of(ElasticsearchSinkBase.FlushBackoffType.CONSTANT);
+                return Optional.of(ElasticsearchWriter.FlushBackoffType.CONSTANT);
             case EXPONENTIAL:
-                return Optional.of(ElasticsearchSinkBase.FlushBackoffType.EXPONENTIAL);
+                return Optional.of(ElasticsearchWriter.FlushBackoffType.EXPONENTIAL);
             default:
                 return Optional.empty();
         }

@@ -19,8 +19,8 @@
 package org.apache.flink.streaming.connectors.elasticsearch.table;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.table.api.TableException;
@@ -72,7 +72,7 @@ class RowElasticsearchSinkFunction implements ElasticsearchSinkFunction<RowData>
     }
 
     @Override
-    public void process(RowData element, RuntimeContext ctx, RequestIndexer indexer) {
+    public void process(RowData element, Sink.InitContext ctx, RequestIndexer indexer) {
         switch (element.getRowKind()) {
             case INSERT:
             case UPDATE_AFTER:

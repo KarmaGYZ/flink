@@ -20,10 +20,11 @@ package org.apache.flink.streaming.connectors.elasticsearch;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.functions.Function;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.connector.sink.Sink;
 
 import org.elasticsearch.action.ActionRequest;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -64,10 +65,10 @@ public interface ElasticsearchSinkFunction<T> extends Serializable, Function {
      * Initialization method for the function. It is called once before the actual working process
      * methods.
      */
-    default void open() throws Exception {}
+    default void open() throws IOException {}
 
     /** Tear-down method for the function. It is called when the sink closes. */
-    default void close() throws Exception {}
+    default void close() throws IOException {}
 
     /**
      * Process the incoming element to produce multiple {@link ActionRequest ActionsRequests}. The
@@ -77,5 +78,5 @@ public interface ElasticsearchSinkFunction<T> extends Serializable, Function {
      * @param ctx runtime context containing information about the sink instance
      * @param indexer request indexer that {@code ActionRequest} should be added to
      */
-    void process(T element, RuntimeContext ctx, RequestIndexer indexer);
+    void process(T element, Sink.InitContext ctx, RequestIndexer indexer);
 }

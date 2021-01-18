@@ -18,7 +18,7 @@
 package org.apache.flink.streaming.tests;
 
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -77,7 +77,7 @@ public class Elasticsearch6SinkExample {
                 new ElasticsearchSink.Builder<>(
                         httpHosts,
                         (Tuple2<String, String> element,
-                                RuntimeContext ctx,
+                                Sink.InitContext ctx,
                                 RequestIndexer indexer) -> {
                             indexer.add(createIndexRequest(element.f1, parameterTool));
                             indexer.add(createUpdateRequest(element, parameterTool));
@@ -90,7 +90,7 @@ public class Elasticsearch6SinkExample {
         // this instructs the sink to emit after every element, otherwise they would be buffered
         esSinkBuilder.setBulkFlushMaxActions(1);
 
-        source.addSink(esSinkBuilder.build());
+        source.sinkTo(esSinkBuilder.build());
 
         env.execute("Elasticsearch 6.x end to end sink test example");
     }

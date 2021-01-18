@@ -19,6 +19,7 @@
 package org.apache.flink.streaming.connectors.elasticsearch;
 
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.api.connector.sink.Sink;
 
 import org.elasticsearch.action.bulk.BulkItemResponse;
 import org.elasticsearch.action.bulk.BulkProcessor;
@@ -27,6 +28,7 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -83,14 +85,14 @@ public interface ElasticsearchApiCallBridge<C extends AutoCloseable> extends Ser
      */
     void configureBulkProcessorBackoff(
             BulkProcessor.Builder builder,
-            @Nullable ElasticsearchSinkBase.BulkFlushBackoffPolicy flushBackoffPolicy);
+            @Nullable ElasticsearchWriter.BulkFlushBackoffPolicy flushBackoffPolicy);
 
     /**
      * Verify the client connection by making a test request/ping to the Elasticsearch cluster.
      *
-     * <p>Called by {@link ElasticsearchSinkBase#open(org.apache.flink.configuration.Configuration)}
-     * after creating the client. This makes sure the underlying client is closed if the connection
-     * is not successful and preventing thread leak.
+     * <p>Called by {@link ElasticsearchSinkBase#createWriter(Sink.InitContext, List)} after
+     * creating the client. This makes sure the underlying client is closed if the connection is not
+     * successful and preventing thread leak.
      *
      * @param client the Elasticsearch client.
      */

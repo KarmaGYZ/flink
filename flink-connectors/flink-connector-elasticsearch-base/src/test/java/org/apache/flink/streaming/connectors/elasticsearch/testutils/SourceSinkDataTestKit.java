@@ -17,7 +17,7 @@
 
 package org.apache.flink.streaming.connectors.elasticsearch.testutils;
 
-import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
@@ -124,7 +124,7 @@ public class SourceSinkDataTestKit {
 
         @Override
         public void process(
-                Tuple2<Integer, String> element, RuntimeContext ctx, RequestIndexer indexer) {
+                Tuple2<Integer, String> element, Sink.InitContext ctx, RequestIndexer indexer) {
             indexer.add(createIndexRequest(element));
         }
     }
