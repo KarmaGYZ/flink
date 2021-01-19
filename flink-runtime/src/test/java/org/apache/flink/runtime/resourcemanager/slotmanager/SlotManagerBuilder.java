@@ -129,6 +129,7 @@ public class SlotManagerBuilder {
                         waitResultConsumedBeforeRelease,
                         slotMatchingStrategy,
                         AnyMatchingTaskExecutorMatchingStrategy.INSTANCE,
+                        TaskExecutorAllocationStrategy.NO_OP_STRATEGY,
                         defaultWorkerResourceSpec,
                         numSlotsPerWorker,
                         maxSlotNum,

@@ -31,6 +31,8 @@ public class ResourceManagerOptions {
     private static final String START_WORKER_RETRY_INTERVAL_KEY =
             "resourcemanager.start-worker.retry-interval";
 
+    public static final String DEFAULT_TASK_EXECUTOR_ALLOCATION_STRATEGY = "DEFAULT";
+
     /** Timeout for jobs which don't have a job manager as leader assigned. */
     public static final ConfigOption<String> JOB_TIMEOUT =
             ConfigOptions.key("resourcemanager.job.timeout")
@@ -83,6 +85,14 @@ public class ResourceManagerOptions {
                             "The number of redundant task managers. Redundant task managers are extra task managers "
                                     + "started by Flink, in order to speed up job recovery in case of failures due to task manager lost. "
                                     + "Note that this feature is available only to the active deployments (native K8s, Yarn and Mesos).");
+
+    @Documentation.ExcludeFromDocumentation
+    public static final ConfigOption<String> TASK_EXECUTOR_ALLOCATION_STRATEGY =
+            ConfigOptions.key("slotmanager.task-executor-allocation.strategy")
+                    .stringType()
+                    .defaultValue(DEFAULT_TASK_EXECUTOR_ALLOCATION_STRATEGY)
+                    .withDescription(
+                            "Defines which strategy is used in allocation new task executors.");
 
     /**
      * The maximum number of start worker failures (Native Kubernetes / Yarn / Mesos) per minute

@@ -44,6 +44,7 @@ public class SlotManagerConfiguration {
     private final boolean waitResultConsumedBeforeRelease;
     private final SlotMatchingStrategy slotMatchingStrategy;
     private final TaskExecutorMatchingStrategy taskExecutorMatchingStrategy;
+    private final TaskExecutorAllocationStrategy taskExecutorAllocationStrategy;
     private final WorkerResourceSpec defaultWorkerResourceSpec;
     private final int numSlotsPerWorker;
     private final int maxSlotNum;
@@ -56,6 +57,7 @@ public class SlotManagerConfiguration {
             boolean waitResultConsumedBeforeRelease,
             SlotMatchingStrategy slotMatchingStrategy,
             TaskExecutorMatchingStrategy taskExecutorMatchingStrategy,
+            TaskExecutorAllocationStrategy taskExecutorAllocationStrategy,
             WorkerResourceSpec defaultWorkerResourceSpec,
             int numSlotsPerWorker,
             int maxSlotNum,
@@ -68,6 +70,8 @@ public class SlotManagerConfiguration {
         this.slotMatchingStrategy = Preconditions.checkNotNull(slotMatchingStrategy);
         this.taskExecutorMatchingStrategy =
                 Preconditions.checkNotNull(taskExecutorMatchingStrategy);
+        this.taskExecutorAllocationStrategy =
+                Preconditions.checkNotNull(taskExecutorAllocationStrategy);
         this.defaultWorkerResourceSpec = Preconditions.checkNotNull(defaultWorkerResourceSpec);
         Preconditions.checkState(numSlotsPerWorker > 0);
         Preconditions.checkState(maxSlotNum > 0);
@@ -99,6 +103,10 @@ public class SlotManagerConfiguration {
 
     public TaskExecutorMatchingStrategy getTaskExecutorMatchingStrategy() {
         return taskExecutorMatchingStrategy;
+    }
+
+    public TaskExecutorAllocationStrategy getTaskExecutorAllocationStrategy() {
+        return taskExecutorAllocationStrategy;
     }
 
     public WorkerResourceSpec getDefaultWorkerResourceSpec() {
@@ -157,6 +165,23 @@ public class SlotManagerConfiguration {
 
         int maxSlotNum = configuration.getInteger(ResourceManagerOptions.MAX_SLOT_NUM);
 
+        TaskExecutorAllocationStrategy taskExecutorAllocationStrategy;
+        switch (configuration.getString(ResourceManagerOptions.TASK_EXECUTOR_ALLOCATION_STRATEGY)) {
+            case ResourceManagerOptions.DEFAULT_TASK_EXECUTOR_ALLOCATION_STRATEGY:
+                taskExecutorAllocationStrategy =
+                        new DefaultTaskExecutorAllocationStrategy(
+                                SlotManagerUtils.generateDefaultSlotResourceProfile(
+                                        defaultWorkerResourceSpec, numSlotsPerWorker),
+                                numSlotsPerWorker);
+                break;
+            default:
+                throw new ConfigurationException(
+                        "Could not find the task executor allocation strategy "
+                                + configuration.getString(
+                                        ResourceManagerOptions.TASK_EXECUTOR_ALLOCATION_STRATEGY)
+                                + '.');
+        }
+
         int redundantTaskManagerNum =
                 configuration.getInteger(ResourceManagerOptions.REDUNDANT_TASK_MANAGER_NUM);
 
@@ -167,6 +192,7 @@ public class SlotManagerConfiguration {
                 waitResultConsumedBeforeRelease,
                 slotMatchingStrategy,
                 taskExecutorMatchingStrategy,
+                taskExecutorAllocationStrategy,
                 defaultWorkerResourceSpec,
                 numSlotsPerWorker,
                 maxSlotNum,
