@@ -27,6 +27,11 @@ import java.util.Objects;
 public class PendingTaskManager {
     private final ResourceProfile totalResourceProfile;
     private final ResourceProfile defaultSlotResourceProfile;
+    private PendingTaskManagerId id;
+
+    public PendingTaskManagerId getId() {
+        return id;
+    }
 
     public PendingTaskManager(
             ResourceProfile totalResourceProfile, ResourceProfile defaultSlotResourceProfile) {
