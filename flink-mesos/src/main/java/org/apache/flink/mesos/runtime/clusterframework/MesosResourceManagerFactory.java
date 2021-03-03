@@ -74,6 +74,12 @@ public class MesosResourceManagerFactory
     }
 
     @Override
+    protected Configuration getEffectiveConfigurationForResourceManager(
+            Configuration configuration) {
+        return configuration;
+    }
+
+    @Override
     protected ResourceManagerRuntimeServicesConfiguration
             createResourceManagerRuntimeServicesConfiguration(Configuration configuration)
                     throws ConfigurationException {
