@@ -40,6 +40,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.net.InetAddress;
+import java.util.Collections;
 
 public class TaskExecutorLocalStateStoresManagerTest extends TestLogger {
 
@@ -246,6 +247,7 @@ public class TaskExecutorLocalStateStoresManagerTest extends TestLogger {
                 config,
                 VoidPermanentBlobService.INSTANCE,
                 UnregisteredMetricGroups.createUnregisteredTaskManagerMetricGroup(),
+                Collections.emptyMap(),
                 Executors.newDirectExecutorService(),
                 throwable -> {});
     }

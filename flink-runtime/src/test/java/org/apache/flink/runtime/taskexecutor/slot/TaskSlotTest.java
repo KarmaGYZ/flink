@@ -23,6 +23,7 @@ import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.util.TestLogger;
 
@@ -64,6 +65,7 @@ public class TaskSlotTest extends TestLogger {
                 MemoryManager.MIN_PAGE_SIZE,
                 JOB_ID,
                 ALLOCATION_ID,
+                ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
                 Executors.newDirectExecutorService());
     }
 }

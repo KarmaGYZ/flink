@@ -23,6 +23,7 @@ import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.util.AutoCloseableAsync;
 import org.apache.flink.util.FlinkException;
@@ -90,17 +91,23 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
     /** {@link Executor} for background actions, e.g. verify all managed memory released. */
     private final Executor asyncExecutor;
 
+    /** Provider of the information of external resources in this slot. */
+    private final ExternalResourceInfoProvider externalResourceInfoProvider;
+
     public TaskSlot(
             final int index,
             final ResourceProfile resourceProfile,
             final int memoryPageSize,
             final JobID jobId,
             final AllocationID allocationId,
+            final ExternalResourceInfoProvider externalResourceInfoProvider,
             final Executor asyncExecutor) {
 
         this.index = index;
         this.resourceProfile = Preconditions.checkNotNull(resourceProfile);
         this.asyncExecutor = Preconditions.checkNotNull(asyncExecutor);
+        this.externalResourceInfoProvider =
+                Preconditions.checkNotNull(externalResourceInfoProvider);
 
         this.tasks = new HashMap<>(4);
         this.state = TaskSlotState.ALLOCATED;
@@ -135,6 +142,10 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
 
     TaskSlotState getState() {
         return state;
+    }
+
+    public ExternalResourceInfoProvider getExternalResourceInfoProvider() {
+        return externalResourceInfoProvider;
     }
 
     public boolean isEmpty() {

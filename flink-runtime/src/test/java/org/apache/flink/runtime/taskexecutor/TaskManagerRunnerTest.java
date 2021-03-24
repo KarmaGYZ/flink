@@ -200,7 +200,7 @@ public class TaskManagerRunnerTest extends TestLogger {
                 metricRegistry,
                 blobCacheService,
                 localCommunicationOnly,
-                externalResourceInfoProvider,
+                externalResourceDrivers,
                 fatalErrorHandler) -> taskExecutorService;
     }
 

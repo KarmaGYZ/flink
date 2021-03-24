@@ -26,6 +26,8 @@ import org.apache.flink.runtime.concurrent.Executors;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.runtime.testingUtils.TestingUtils;
 
+import java.util.Collections;
+
 /** Testing utility and factory methods for {@link TaskSlotTable} and {@link TaskSlot}s. */
 public enum TaskSlotUtils {
     ;
@@ -60,6 +62,7 @@ public enum TaskSlotUtils {
                 DEFAULT_RESOURCE_PROFILE,
                 MemoryManager.MIN_PAGE_SIZE,
                 timerService,
+                Collections.emptyMap(),
                 Executors.newDirectExecutorService());
     }
 

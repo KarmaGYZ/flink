@@ -20,6 +20,7 @@ package org.apache.flink.runtime.taskexecutor.slot;
 
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceBudgetManager;
@@ -30,6 +31,8 @@ import org.apache.flink.runtime.concurrent.ComponentMainThreadExecutor;
 import org.apache.flink.runtime.concurrent.ComponentMainThreadExecutor.DummyComponentMainThreadExecutor;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
+import org.apache.flink.runtime.externalresource.ExternalResourceUtils;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 import org.apache.flink.runtime.taskexecutor.SlotStatus;
@@ -100,6 +103,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
 
     private final ResourceBudgetManager budgetManager;
 
+    private final Map<String, ExternalResourceDriver> externalResourceDrivers;
+
     /** The closing future is completed when all slot are freed and state is closed. */
     private final CompletableFuture<Void> closingFuture;
 
@@ -118,6 +123,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
             final ResourceProfile defaultSlotResourceProfile,
             final int memoryPageSize,
             final TimerService<AllocationID> timerService,
+            Map<String, ExternalResourceDriver> externalResourceDrivers,
             final Executor memoryVerificationExecutor) {
         Preconditions.checkArgument(
                 0 < numberSlots, "The number of task slots must be greater than 0.");
@@ -126,6 +132,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         this.dynamicSlotIndex = numberSlots;
         this.defaultSlotResourceProfile = Preconditions.checkNotNull(defaultSlotResourceProfile);
         this.memoryPageSize = memoryPageSize;
+
+        this.externalResourceDrivers = Preconditions.checkNotNull(externalResourceDrivers);
 
         this.taskSlots = new HashMap<>(numberSlots);
 
@@ -325,6 +333,9 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
                         memoryPageSize,
                         jobId,
                         allocationId,
+                        ExternalResourceUtils.createStaticExternalResourceInfoProvider(
+                                effectiveResourceProfile.getExtendedResources(),
+                                externalResourceDrivers),
                         memoryVerificationExecutor);
         taskSlots.put(index, taskSlot);
 
@@ -367,6 +378,17 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
 
     private boolean isDynamicIndex(int index) {
         return index >= numberSlots;
+    }
+
+    private ExternalResourceInfoProvider getExternalResourceInfoProvider(
+            ResourceProfile resourceProfile) {
+        if (resourceProfile.equals(ResourceProfile.UNKNOWN)) {
+            return ExternalResourceUtils.createStaticExternalResourceInfoProvider(
+                    defaultSlotResourceProfile.getExtendedResources(), externalResourceDrivers);
+        } else {
+            return ExternalResourceUtils.createStaticExternalResourceInfoProvider(
+                    resourceProfile.getExtendedResources(), externalResourceDrivers);
+        }
     }
 
     @Override
@@ -442,6 +464,8 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         if (taskSlot.isEmpty()) {
             // remove the allocation id to task slot mapping
             allocatedSlots.remove(allocationId);
+            ExternalResourceUtils.releaseExternalResourcesToDrivers(
+                    taskSlot.getExternalResourceInfoProvider(), externalResourceDrivers);
 
             // unregister a potential timeout
             timerService.unregisterTimeout(allocationId);
@@ -509,6 +533,12 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
     @Override
     public Iterator<TaskSlot<T>> getAllocatedSlots(JobID jobId) {
         return new TaskSlotIterator(jobId, TaskSlotState.ALLOCATED);
+    }
+
+    @Override
+    public ExternalResourceInfoProvider getExternalResourceInfoProvider(AllocationID allocationId) {
+        return Preconditions.checkNotNull(allocatedSlots.get(allocationId))
+                .getExternalResourceInfoProvider();
     }
 
     @Override

@@ -27,7 +27,6 @@ import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.runtime.blob.BlobCacheService;
 import org.apache.flink.runtime.blob.VoidBlobStore;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
-import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.heartbeat.TestingHeartbeatServices;
 import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
 import org.apache.flink.runtime.highavailability.TestingHighAvailabilityServices;
@@ -57,6 +56,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -266,7 +266,7 @@ public class TaskManagerRunnerStartupTest extends TestLogger {
                 metricRegistry,
                 new BlobCacheService(configuration, new VoidBlobStore(), null),
                 false,
-                ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
+                Collections.emptyMap(),
                 error -> {});
     }
 }

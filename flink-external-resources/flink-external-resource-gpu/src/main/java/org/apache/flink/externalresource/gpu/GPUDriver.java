@@ -20,9 +20,10 @@ package org.apache.flink.externalresource.gpu;
 
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
+import org.apache.flink.api.common.externalresource.ExternalResourceDriverConfiguration;
+import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ExternalResourceOptions;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.flink.util.FlinkException;
@@ -40,8 +41,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -71,11 +74,35 @@ class GPUDriver implements ExternalResourceDriver {
     static final ConfigOption<String> DISCOVERY_SCRIPT_ARG =
             key("discovery-script.args").stringType().noDefaultValue();
 
+    /**
+     * The mode which external resource is allocated between slots of the same TaskManager. Valid
+     * options are SHARE and EXCLUSIVE.
+     */
+    @VisibleForTesting
+    static final ConfigOption<AllocationMode> ALLOCATION_MODE =
+            key("allocation-mode")
+                    .enumType(AllocationMode.class)
+                    .defaultValue(AllocationMode.SHARE);
+
     private final File discoveryScriptFile;
     private final String args;
+    private final long totalAmount;
+    private final AllocationMode allocationMode;
+    private final Set<GPUInfo> gpuResources;
+    private boolean initialized;
 
-    GPUDriver(Configuration config) throws Exception {
-        final String discoveryScriptPathStr = config.getString(DISCOVERY_SCRIPT_PATH);
+    GPUDriver(ExternalResourceDriverConfiguration config) throws Exception {
+        Preconditions.checkArgument(
+                config.getTotalAmount() > 0,
+                "The gpuAmount should be positive when retrieving the GPU resource information.");
+        this.totalAmount = config.getTotalAmount();
+        this.allocationMode =
+                Preconditions.checkNotNull(config.getParamConfigs().get(ALLOCATION_MODE));
+        this.gpuResources = new HashSet<>();
+        this.initialized = false;
+
+        final String discoveryScriptPathStr =
+                config.getParamConfigs().getString(DISCOVERY_SCRIPT_PATH);
         if (StringUtils.isNullOrWhitespaceOnly(discoveryScriptPathStr)) {
             throw new IllegalConfigurationException(
                     String.format(
@@ -106,17 +133,61 @@ class GPUDriver implements ExternalResourceDriver {
                             discoveryScriptFile.getAbsolutePath()));
         }
 
-        args = config.getString(DISCOVERY_SCRIPT_ARG);
+        args = config.getParamConfigs().getString(DISCOVERY_SCRIPT_ARG);
     }
 
     @Override
     public Set<GPUInfo> retrieveResourceInfo(long gpuAmount) throws Exception {
-        Preconditions.checkArgument(
-                gpuAmount > 0,
-                "The gpuAmount should be positive when retrieving the GPU resource information.");
+        initialize();
+        switch (allocationMode) {
+            case SHARE:
+                return Collections.unmodifiableSet(gpuResources);
+            case EXCLUSIVE:
+                Preconditions.checkArgument(
+                        gpuAmount <= gpuResources.size(),
+                        "Could not retrieve {} GPU devices, only {} available.",
+                        gpuAmount,
+                        gpuResources.size());
 
-        final Set<GPUInfo> gpuResources = new HashSet<>();
-        String output = executeDiscoveryScript(discoveryScriptFile, gpuAmount, args);
+                final Set<GPUInfo> gpuInfos = new HashSet<>();
+                final Iterator<GPUInfo> gpuResourcesItr = gpuResources.iterator();
+                for (int i = 0; i < gpuAmount; ++i) {
+                    gpuInfos.add(gpuResourcesItr.next());
+                    gpuResourcesItr.remove();
+                }
+                LOG.info("Retrieve GPU resources: {}.", gpuInfos);
+                return Collections.unmodifiableSet(gpuInfos);
+            default:
+                throw new UnsupportedOperationException(
+                        "Unsupported allocation mode " + allocationMode);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void releaseResources(Set<? extends ExternalResourceInfo> releasedResources) {
+        Preconditions.checkState(initialized);
+        switch (allocationMode) {
+            case EXCLUSIVE:
+                Preconditions.checkArgument(
+                        releasedResources.size() + gpuResources.size() <= totalAmount);
+                gpuResources.addAll((Collection<? extends GPUInfo>) releasedResources);
+                LOG.info("Release GPU resources: {}.", releasedResources);
+                break;
+            case SHARE:
+                break;
+            default:
+                throw new UnsupportedOperationException(
+                        "Unsupported allocation mode " + allocationMode);
+        }
+    }
+
+    private void initialize() throws Exception {
+        if (initialized) {
+            return;
+        }
+
+        String output = executeDiscoveryScript(discoveryScriptFile, totalAmount, args);
         if (!output.isEmpty()) {
             String[] indexes = output.split(",");
             for (String index : indexes) {
@@ -126,7 +197,8 @@ class GPUDriver implements ExternalResourceDriver {
             }
         }
         LOG.info("Discover GPU resources: {}.", gpuResources);
-        return Collections.unmodifiableSet(gpuResources);
+
+        initialized = true;
     }
 
     private String executeDiscoveryScript(File discoveryScript, long gpuAmount, String args)
@@ -191,5 +263,11 @@ class GPUDriver implements ExternalResourceDriver {
         } finally {
             process.destroyForcibly();
         }
+    }
+
+    /** Allocation mode of external resources. */
+    public enum AllocationMode {
+        SHARE,
+        EXCLUSIVE
     }
 }

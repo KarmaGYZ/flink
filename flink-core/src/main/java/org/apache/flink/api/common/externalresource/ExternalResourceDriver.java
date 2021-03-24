@@ -27,18 +27,28 @@ import java.util.Set;
  *
  * <p>Drivers that should be instantiated via a {@link ExternalResourceDriverFactory}.
  *
- * <p>TaskExecutor will retrieve the {@link ExternalResourceInfo} set of the external resource from
- * the drivers.
+ * <p>TaskExecutor will retrieve the {@link ExternalResourceInfo} set of the external resource with
+ * the amount of a specific slot throw {@link #retrieveResourceInfo(long)}. When the slot is freed,
+ * those resources will be returned throw {@link #releaseResources(Set)}. Driver should decide its
+ * behavior in different AllocationMode.
  */
 @PublicEvolving
 public interface ExternalResourceDriver {
 
     /**
-     * Retrieve the information of the external resources according to the amount.
+     * Retrieve the information of the external resources according to the amount. The resource will
+     * be release throw {@link #releaseResources(Set)} when the slot it belongs freed.
      *
      * @param amount of the required external resources
      * @return information set of the required external resources
      * @throws Exception if there is something wrong during retrieving
      */
     Set<? extends ExternalResourceInfo> retrieveResourceInfo(long amount) throws Exception;
+
+    /**
+     * Release a set of external resources to the driver.
+     *
+     * @param releasedResources to be released
+     */
+    void releaseResources(Set<? extends ExternalResourceInfo> releasedResources);
 }

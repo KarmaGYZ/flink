@@ -43,7 +43,6 @@ import org.apache.flink.runtime.deployment.TaskDeploymentDescriptor;
 import org.apache.flink.runtime.deployment.TaskDeploymentDescriptorBuilder;
 import org.apache.flink.runtime.entrypoint.ClusterInformation;
 import org.apache.flink.runtime.execution.librarycache.TestingClassLoaderLease;
-import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.heartbeat.HeartbeatListener;
 import org.apache.flink.runtime.heartbeat.HeartbeatManager;
 import org.apache.flink.runtime.heartbeat.HeartbeatManagerImpl;
@@ -2663,7 +2662,6 @@ public class TaskExecutorTest extends TestLogger {
                         InetAddress.getLoopbackAddress().getHostAddress()),
                 haServices,
                 taskManagerServices,
-                ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
                 heartbeatServices,
                 UnregisteredMetricGroups.createUnregisteredTaskManagerMetricGroup(),
                 null,
@@ -2686,7 +2684,6 @@ public class TaskExecutorTest extends TestLogger {
                         InetAddress.getLoopbackAddress().getHostAddress()),
                 haServices,
                 taskManagerServices,
-                ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
                 heartbeatServices,
                 UnregisteredMetricGroups.createUnregisteredTaskManagerMetricGroup(),
                 null,
@@ -2871,6 +2868,7 @@ public class TaskExecutorTest extends TestLogger {
                     DEFAULT_RESOURCE_PROFILE,
                     MemoryManager.MIN_PAGE_SIZE,
                     createDefaultTimerService(timeout.toMilliseconds()),
+                    Collections.emptyMap(),
                     Executors.newDirectExecutorService());
             this.allocateSlotLatch = allocateSlotLatch;
         }
@@ -2911,6 +2909,7 @@ public class TaskExecutorTest extends TestLogger {
                     DEFAULT_RESOURCE_PROFILE,
                     MemoryManager.MIN_PAGE_SIZE,
                     createDefaultTimerService(timeout.toMilliseconds()),
+                    Collections.emptyMap(),
                     Executors.newDirectExecutorService());
             this.slotsToActivate = slotsToActivate;
         }

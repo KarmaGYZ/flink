@@ -21,12 +21,25 @@ package org.apache.flink.runtime.externalresource;
 import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /** Provide the information of external resources. */
 public interface ExternalResourceInfoProvider {
 
-    ExternalResourceInfoProvider NO_EXTERNAL_RESOURCES = resourceName -> Collections.emptySet();
+    ExternalResourceInfoProvider NO_EXTERNAL_RESOURCES =
+            new ExternalResourceInfoProvider() {
+                @Override
+                public Set<ExternalResourceInfo> getExternalResourceInfos(String resourceName) {
+                    return Collections.emptySet();
+                }
+
+                @Override
+                public Map<String, Set<? extends ExternalResourceInfo>>
+                        getAllExternalResourceInfos() {
+                    return Collections.emptyMap();
+                }
+            };
 
     /**
      * Get the specific external resource information by the resourceName.
@@ -35,4 +48,11 @@ public interface ExternalResourceInfoProvider {
      * @return information set of the external resource identified by the resourceName
      */
     Set<ExternalResourceInfo> getExternalResourceInfos(String resourceName);
+
+    /**
+     * Get all the external resource information.
+     *
+     * @return information set of the external resource mapped by the resource name
+     */
+    Map<String, Set<? extends ExternalResourceInfo>> getAllExternalResourceInfos();
 }

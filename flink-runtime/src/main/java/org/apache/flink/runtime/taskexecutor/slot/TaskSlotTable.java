@@ -26,6 +26,7 @@ import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.ComponentMainThreadExecutor;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 import org.apache.flink.util.AutoCloseableAsync;
@@ -216,6 +217,14 @@ public interface TaskSlotTable<T extends TaskSlotPayload>
      * @return Iterator of allocated slots.
      */
     Iterator<TaskSlot<T>> getAllocatedSlots(JobID jobId);
+
+    /**
+     * Return the external resource info provider of an allocated slot
+     *
+     * @param allocationId of the slot
+     * @return ExternalResourceInfoProvider of the slot
+     */
+    ExternalResourceInfoProvider getExternalResourceInfoProvider(AllocationID allocationId);
 
     /**
      * Returns the owning job of the {@link TaskSlot} identified by the given {@link AllocationID}.

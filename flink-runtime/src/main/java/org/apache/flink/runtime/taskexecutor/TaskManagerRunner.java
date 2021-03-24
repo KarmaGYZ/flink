@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.taskexecutor;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
@@ -34,7 +35,6 @@ import org.apache.flink.runtime.blob.BlobCacheService;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.entrypoint.FlinkParseException;
-import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.externalresource.ExternalResourceUtils;
 import org.apache.flink.runtime.heartbeat.HeartbeatServices;
 import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
@@ -78,6 +78,7 @@ import java.net.InetAddress;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -168,8 +169,8 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 new BlobCacheService(
                         configuration, highAvailabilityServices.createBlobStore(), null);
 
-        final ExternalResourceInfoProvider externalResourceInfoProvider =
-                ExternalResourceUtils.createStaticExternalResourceInfoProviderFromConfig(
+        final Map<String, ExternalResourceDriver> externalResourceDrivers =
+                ExternalResourceUtils.externalResourceDriversFromConfig(
                         configuration, pluginManager);
 
         taskExecutorService =
@@ -182,7 +183,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         metricRegistry,
                         blobCacheService,
                         false,
-                        externalResourceInfoProvider,
+                        externalResourceDrivers,
                         this);
 
         this.terminationFuture = new CompletableFuture<>();
@@ -438,7 +439,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
             MetricRegistry metricRegistry,
             BlobCacheService blobCacheService,
             boolean localCommunicationOnly,
-            ExternalResourceInfoProvider externalResourceInfoProvider,
+            Map<String, ExternalResourceDriver> externalResourceDrivers,
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
 
@@ -452,7 +453,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         metricRegistry,
                         blobCacheService,
                         localCommunicationOnly,
-                        externalResourceInfoProvider,
+                        externalResourceDrivers,
                         fatalErrorHandler);
 
         return TaskExecutorToServiceAdapter.createFor(taskExecutor);
@@ -467,7 +468,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
             MetricRegistry metricRegistry,
             BlobCacheService blobCacheService,
             boolean localCommunicationOnly,
-            ExternalResourceInfoProvider externalResourceInfoProvider,
+            Map<String, ExternalResourceDriver> externalResourceDrivers,
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
 
@@ -508,6 +509,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                         taskManagerServicesConfiguration,
                         blobCacheService.getPermanentBlobService(),
                         taskManagerMetricGroup.f1,
+                        externalResourceDrivers,
                         ioExecutor,
                         fatalErrorHandler);
 
@@ -527,7 +529,6 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 taskManagerConfiguration,
                 highAvailabilityServices,
                 taskManagerServices,
-                externalResourceInfoProvider,
                 heartbeatServices,
                 taskManagerMetricGroup.f0,
                 metricQueryServiceAddress,
@@ -628,7 +629,7 @@ public class TaskManagerRunner implements FatalErrorHandler {
                 MetricRegistry metricRegistry,
                 BlobCacheService blobCacheService,
                 boolean localCommunicationOnly,
-                ExternalResourceInfoProvider externalResourceInfoProvider,
+                Map<String, ExternalResourceDriver> externalResourceDrivers,
                 FatalErrorHandler fatalErrorHandler)
                 throws Exception;
     }

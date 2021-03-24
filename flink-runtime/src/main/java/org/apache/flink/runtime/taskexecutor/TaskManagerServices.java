@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.taskexecutor;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
 import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.blob.PermanentBlobService;
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -256,6 +258,7 @@ public class TaskManagerServices {
             TaskManagerServicesConfiguration taskManagerServicesConfiguration,
             PermanentBlobService permanentBlobService,
             MetricGroup taskManagerMetricGroup,
+            Map<String, ExternalResourceDriver> externalResourceDrivers,
             ExecutorService ioExecutor,
             FatalErrorHandler fatalErrorHandler)
             throws Exception {
@@ -299,6 +302,7 @@ public class TaskManagerServices {
                         taskManagerServicesConfiguration.getTaskExecutorResourceSpec(),
                         taskManagerServicesConfiguration.getTimerServiceShutdownTimeout(),
                         taskManagerServicesConfiguration.getPageSize(),
+                        externalResourceDrivers,
                         ioExecutor);
 
         final JobTable jobTable = DefaultJobTable.create();
@@ -363,6 +367,7 @@ public class TaskManagerServices {
             final TaskExecutorResourceSpec taskExecutorResourceSpec,
             final long timerServiceShutdownTimeout,
             final int pageSize,
+            Map<String, ExternalResourceDriver> externalResourceDrivers,
             final Executor memoryVerificationExecutor) {
         final TimerService<AllocationID> timerService =
                 new TimerService<>(new ScheduledThreadPoolExecutor(1), timerServiceShutdownTimeout);
@@ -374,6 +379,7 @@ public class TaskManagerServices {
                         taskExecutorResourceSpec, numberOfSlots),
                 pageSize,
                 timerService,
+                externalResourceDrivers,
                 memoryVerificationExecutor);
     }
 

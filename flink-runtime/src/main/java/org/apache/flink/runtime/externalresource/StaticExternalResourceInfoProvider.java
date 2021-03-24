@@ -18,7 +18,6 @@
 
 package org.apache.flink.runtime.externalresource;
 
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 
 import java.util.Collections;
@@ -47,8 +46,8 @@ public class StaticExternalResourceInfoProvider implements ExternalResourceInfoP
         return Collections.unmodifiableSet(externalResources.get(resourceName));
     }
 
-    @VisibleForTesting
-    Map<String, Set<? extends ExternalResourceInfo>> getExternalResources() {
-        return externalResources;
+    @Override
+    public Map<String, Set<? extends ExternalResourceInfo>> getAllExternalResourceInfos() {
+        return Collections.unmodifiableMap(externalResources);
     }
 }

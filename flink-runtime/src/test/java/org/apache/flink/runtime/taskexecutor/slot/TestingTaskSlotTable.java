@@ -26,6 +26,7 @@ import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.ComponentMainThreadExecutor;
 import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 
@@ -156,6 +157,11 @@ public class TestingTaskSlotTable<T extends TaskSlotPayload> implements TaskSlot
     @Override
     public Iterator<TaskSlot<T>> getAllocatedSlots(JobID jobId) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ExternalResourceInfoProvider getExternalResourceInfoProvider(AllocationID allocationId) {
+        return ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES;
     }
 
     @Nullable

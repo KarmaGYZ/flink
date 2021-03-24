@@ -25,6 +25,7 @@ import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.concurrent.ComponentMainThreadExecutor;
 import org.apache.flink.runtime.executiongraph.ExecutionAttemptID;
+import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.memory.MemoryManager;
 import org.apache.flink.runtime.rpc.MainThreadExecutable;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
@@ -164,6 +165,11 @@ public class ThreadSafeTaskSlotTable<T extends TaskSlotPayload> implements TaskS
     @Override
     public Iterator<TaskSlot<T>> getAllocatedSlots(JobID jobId) {
         return callAsync(() -> taskSlotTable.getAllocatedSlots(jobId));
+    }
+
+    @Override
+    public ExternalResourceInfoProvider getExternalResourceInfoProvider(AllocationID allocationId) {
+        return callAsync(() -> taskSlotTable.getExternalResourceInfoProvider(allocationId));
     }
 
     @Nullable

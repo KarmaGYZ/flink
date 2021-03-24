@@ -50,7 +50,6 @@ import org.apache.flink.runtime.entrypoint.component.DefaultDispatcherResourceMa
 import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponent;
 import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponentFactory;
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph;
-import org.apache.flink.runtime.externalresource.ExternalResourceInfoProvider;
 import org.apache.flink.runtime.heartbeat.HeartbeatServices;
 import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
 import org.apache.flink.runtime.highavailability.HighAvailabilityServicesUtils;
@@ -632,7 +631,7 @@ public class MiniCluster implements AutoCloseableAsync {
                             metricRegistry,
                             blobCacheService,
                             useLocalCommunication(),
-                            ExternalResourceInfoProvider.NO_EXTERNAL_RESOURCES,
+                            Collections.emptyMap(),
                             taskManagerTerminatingFatalErrorHandlerFactory.create(
                                     taskManagers.size()));
 

@@ -20,14 +20,15 @@ package org.apache.flink.runtime.externalresource;
 
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriver;
+import org.apache.flink.api.common.externalresource.ExternalResourceDriverConfiguration;
 import org.apache.flink.api.common.externalresource.ExternalResourceDriverFactory;
 import org.apache.flink.api.common.externalresource.ExternalResourceInfo;
 import org.apache.flink.api.common.resources.ExternalResource;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.configuration.DelegatingConfiguration;
 import org.apache.flink.configuration.ExternalResourceOptions;
 import org.apache.flink.core.plugin.PluginManager;
+import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 
 import org.slf4j.Logger;
@@ -117,25 +118,11 @@ public class ExternalResourceUtils {
         return externalResourceConfigs;
     }
 
-    /**
-     * Instantiate {@link StaticExternalResourceInfoProvider} for all of enabled external resources.
-     */
-    public static ExternalResourceInfoProvider createStaticExternalResourceInfoProviderFromConfig(
-            Configuration configuration, PluginManager pluginManager) {
-
-        final Map<String, Long> externalResourceAmountMap =
-                getExternalResourceAmountMap(configuration);
-        LOG.info("Enabled external resources: {}", externalResourceAmountMap.keySet());
-
-        return createStaticExternalResourceInfoProvider(
-                externalResourceAmountMap,
-                externalResourceDriversFromConfig(configuration, pluginManager));
-    }
-
     /** Get the map of resource name and amount of all of enabled external resources. */
     @VisibleForTesting
     static Map<String, Long> getExternalResourceAmountMap(Configuration config) {
         final Set<String> resourceSet = getExternalResourceSet(config);
+        LOG.info("Enabled external resources: {}", resourceSet);
 
         if (resourceSet.isEmpty()) {
             return Collections.emptyMap();
@@ -186,12 +173,11 @@ public class ExternalResourceUtils {
      * external resources. {@link ExternalResourceDriver ExternalResourceDrivers} are mapped to its
      * resource name.
      */
-    @VisibleForTesting
-    static Map<String, ExternalResourceDriver> externalResourceDriversFromConfig(
+    public static Map<String, ExternalResourceDriver> externalResourceDriversFromConfig(
             Configuration config, PluginManager pluginManager) {
-        final Set<String> resourceSet = getExternalResourceSet(config);
+        final Map<String, Long> externalResourceAmountMap = getExternalResourceAmountMap(config);
 
-        if (resourceSet.isEmpty()) {
+        if (externalResourceAmountMap.isEmpty()) {
             return Collections.emptyMap();
         }
 
@@ -206,7 +192,7 @@ public class ExternalResourceUtils {
                                 externalResourceDriverFactory));
 
         final Map<String, ExternalResourceDriver> externalResourceDrivers = new HashMap<>();
-        for (String resourceName : resourceSet) {
+        for (String resourceName : externalResourceAmountMap.keySet()) {
             final ConfigOption<String> driverClassOption =
                     key(ExternalResourceOptions
                                     .getExternalResourceDriverFactoryConfigOptionForResource(
@@ -225,17 +211,14 @@ public class ExternalResourceUtils {
             ExternalResourceDriverFactory externalResourceDriverFactory =
                     externalResourceFactories.get(driverFactoryClassName);
             if (externalResourceDriverFactory != null) {
-                DelegatingConfiguration delegatingConfiguration =
-                        new DelegatingConfiguration(
-                                config,
-                                ExternalResourceOptions
-                                        .getExternalResourceParamConfigPrefixForResource(
-                                                resourceName));
+                ExternalResourceDriverConfiguration driverConfig =
+                        new ExternalResourceDriverConfiguration(
+                                config, resourceName, externalResourceAmountMap.get(resourceName));
                 try {
                     externalResourceDrivers.put(
                             resourceName,
                             externalResourceDriverFactory.createExternalResourceDriver(
-                                    delegatingConfiguration));
+                                    driverConfig));
                     LOG.info("Add external resources driver for {}.", resourceName);
                 } catch (Exception e) {
                     LOG.warn(
@@ -255,12 +238,9 @@ public class ExternalResourceUtils {
         return externalResourceDrivers;
     }
 
-    /**
-     * Instantiate {@link StaticExternalResourceInfoProvider} for all of enabled external resources.
-     */
-    @VisibleForTesting
-    static ExternalResourceInfoProvider createStaticExternalResourceInfoProvider(
-            Map<String, Long> externalResourceAmountMap,
+    /** Instantiate {@link StaticExternalResourceInfoProvider} for required external resource. */
+    public static ExternalResourceInfoProvider createStaticExternalResourceInfoProvider(
+            Map<String, ExternalResource> externalResourceAmountMap,
             Map<String, ExternalResourceDriver> externalResourceDrivers) {
         final Map<String, Set<? extends ExternalResourceInfo>> externalResources = new HashMap<>();
         for (Map.Entry<String, ExternalResourceDriver> externalResourceDriverEntry :
@@ -273,7 +253,10 @@ public class ExternalResourceUtils {
                     final Set<? extends ExternalResourceInfo> externalResourceInfos;
                     externalResourceInfos =
                             externalResourceDriver.retrieveResourceInfo(
-                                    externalResourceAmountMap.get(resourceName));
+                                    externalResourceAmountMap
+                                            .get(resourceName)
+                                            .getValue()
+                                            .longValue());
                     externalResources.put(resourceName, externalResourceInfos);
                 } catch (Exception e) {
                     LOG.warn(
@@ -281,10 +264,20 @@ public class ExternalResourceUtils {
                             resourceName,
                             e);
                 }
-            } else {
-                LOG.warn("Could not found legal amount configuration for {}.", resourceName);
             }
         }
         return new StaticExternalResourceInfoProvider(externalResources);
+    }
+
+    public static void releaseExternalResourcesToDrivers(
+            ExternalResourceInfoProvider externalResourceInfoProvider,
+            Map<String, ExternalResourceDriver> externalResourceDrivers) {
+        externalResourceInfoProvider
+                .getAllExternalResourceInfos()
+                .forEach(
+                        ((resourceName, externalResourceInfos) ->
+                                Preconditions.checkNotNull(
+                                                externalResourceDrivers.get(resourceName))
+                                        .releaseResources(externalResourceInfos)));
     }
 }

@@ -115,6 +115,9 @@ public class ExternalResourceUtilsTest extends TestLogger {
                 ExternalResourceOptions.getExternalResourceDriverFactoryConfigOptionForResource(
                         RESOURCE_NAME_1),
                 driverFactoryClassName);
+        config.setString(
+                ExternalResourceOptions.getAmountConfigOptionForResource(RESOURCE_NAME_1),
+                String.valueOf(RESOURCE_AMOUNT_1));
 
         final Map<String, ExternalResourceDriver> externalResourceDrivers =
                 ExternalResourceUtils.externalResourceDriversFromConfig(
@@ -195,9 +198,10 @@ public class ExternalResourceUtilsTest extends TestLogger {
 
     @Test
     public void testGetExternalResourceInfoProvider() {
-        final Map<String, Long> externalResourceAmountMap = new HashMap<>();
+        final Map<String, ExternalResource> externalResourceAmountMap = new HashMap<>();
         final Map<String, ExternalResourceDriver> externalResourceDrivers = new HashMap<>();
-        externalResourceAmountMap.put(RESOURCE_NAME_1, RESOURCE_AMOUNT_1);
+        externalResourceAmountMap.put(
+                RESOURCE_NAME_1, new ExternalResource(RESOURCE_NAME_1, RESOURCE_AMOUNT_1));
         externalResourceDrivers.put(RESOURCE_NAME_1, new TestingExternalResourceDriver());
 
         final StaticExternalResourceInfoProvider externalResourceInfoProvider =
@@ -205,12 +209,13 @@ public class ExternalResourceUtilsTest extends TestLogger {
                         ExternalResourceUtils.createStaticExternalResourceInfoProvider(
                                 externalResourceAmountMap, externalResourceDrivers);
 
-        assertNotNull(externalResourceInfoProvider.getExternalResources().get(RESOURCE_NAME_1));
+        assertNotNull(
+                externalResourceInfoProvider.getAllExternalResourceInfos().get(RESOURCE_NAME_1));
     }
 
     @Test
     public void testGetExternalResourceInfoProviderWithoutAmount() {
-        final Map<String, Long> externalResourceAmountMap = new HashMap<>();
+        final Map<String, ExternalResource> externalResourceAmountMap = new HashMap<>();
         final Map<String, ExternalResourceDriver> externalResourceDrivers = new HashMap<>();
         externalResourceDrivers.put(RESOURCE_NAME_1, new TestingExternalResourceDriver());
 
@@ -219,7 +224,8 @@ public class ExternalResourceUtilsTest extends TestLogger {
                         ExternalResourceUtils.createStaticExternalResourceInfoProvider(
                                 externalResourceAmountMap, externalResourceDrivers);
 
-        assertThat(externalResourceInfoProvider.getExternalResources().entrySet(), is(empty()));
+        assertThat(
+                externalResourceInfoProvider.getAllExternalResourceInfos().entrySet(), is(empty()));
     }
 
     @Test

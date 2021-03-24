@@ -31,4 +31,9 @@ public class TestingExternalResourceDriver implements ExternalResourceDriver {
     public Set<? extends ExternalResourceInfo> retrieveResourceInfo(long amount) {
         return Collections.emptySet();
     }
+
+    @Override
+    public void releaseResources(Set<? extends ExternalResourceInfo> releasedResources) {
+        // Do nothing
+    }
 }
