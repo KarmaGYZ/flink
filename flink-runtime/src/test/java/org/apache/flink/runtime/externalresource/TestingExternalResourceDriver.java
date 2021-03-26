@@ -27,15 +27,8 @@ import java.util.Set;
 /** No-op {@link ExternalResourceDriver} for testing purpose. */
 public class TestingExternalResourceDriver implements ExternalResourceDriver {
 
-    private int callTimes = 0;
-
     @Override
     public Set<? extends ExternalResourceInfo> retrieveResourceInfo(long amount) {
-        callTimes += 1;
         return Collections.emptySet();
-    }
-
-    public int getCallTimes() {
-        return callTimes;
     }
 }
