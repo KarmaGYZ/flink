@@ -107,9 +107,14 @@ public class DefaultSlotStatusSyncer implements SlotStatusSyncer {
         final TaskExecutorGateway gateway =
                 taskManager.get().getTaskExecutorConnection().getTaskExecutorGateway();
 
+        final ResourceProfile effectiveResourceProfile =
+                resourceProfile.equals(ResourceProfile.UNKNOWN)
+                        ? taskManager.get().getDefaultSlotResourceProfile()
+                        : resourceProfile;
+
         taskManagerTracker.notifySlotStatus(
-                allocationId, jobId, instanceId, resourceProfile, SlotState.PENDING);
-        resourceTracker.notifyAcquiredResource(jobId, resourceProfile);
+                allocationId, jobId, instanceId, effectiveResourceProfile, SlotState.PENDING);
+        resourceTracker.notifyAcquiredResource(jobId, effectiveResourceProfile);
         pendingSlotAllocations.add(allocationId);
 
         // RPC call to the task manager
@@ -156,7 +161,7 @@ public class DefaultSlotStatusSyncer implements SlotStatusSyncer {
                                         allocationId,
                                         jobId,
                                         instanceId,
-                                        resourceProfile,
+                                        effectiveResourceProfile,
                                         SlotState.ALLOCATED);
                                 returnedFuture.complete(null);
                             } else {
@@ -170,12 +175,13 @@ public class DefaultSlotStatusSyncer implements SlotStatusSyncer {
                                             allocationId,
                                             jobId,
                                             throwable);
-                                    resourceTracker.notifyLostResource(jobId, resourceProfile);
+                                    resourceTracker.notifyLostResource(
+                                            jobId, effectiveResourceProfile);
                                     taskManagerTracker.notifySlotStatus(
                                             allocationId,
                                             jobId,
                                             instanceId,
-                                            resourceProfile,
+                                            effectiveResourceProfile,
                                             SlotState.FREE);
                                 }
                                 returnedFuture.completeExceptionally(throwable);

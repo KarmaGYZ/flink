@@ -73,7 +73,7 @@ public class DefaultResourceAllocationStrategyTest extends TestLogger {
                 result.getAllocationsOnRegisteredResources()
                         .get(jobId)
                         .get(taskManager.getInstanceId())
-                        .getResourceCount(DEFAULT_SLOT_RESOURCE),
+                        .getResourceCount(ResourceProfile.UNKNOWN),
                 is(2));
         assertThat(
                 result.getAllocationsOnRegisteredResources()
@@ -127,7 +127,7 @@ public class DefaultResourceAllocationStrategyTest extends TestLogger {
                             resourceWithCount.getKey(), resourceWithCount.getValue());
         }
 
-        assertThat(allFulfilledRequirements.getResourceCount(DEFAULT_SLOT_RESOURCE), is(7));
+        assertThat(allFulfilledRequirements.getResourceCount(ResourceProfile.UNKNOWN), is(7));
         assertThat(allFulfilledRequirements.getResourceCount(largeResource), is(1));
     }
 

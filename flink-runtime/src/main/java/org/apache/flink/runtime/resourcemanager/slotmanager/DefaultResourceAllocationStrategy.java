@@ -160,7 +160,7 @@ public class DefaultResourceAllocationStrategy implements ResourceAllocationStra
                     getEffectiveResourceProfile(
                             requiredResource, registeredResources.get(matchedTaskManager.get()).f1);
             resultBuilder.addAllocationOnRegisteredResource(
-                    jobId, matchedTaskManager.get(), effectiveProfile);
+                    jobId, matchedTaskManager.get(), requiredResource);
             deductionRegisteredResource(
                     registeredResources, matchedTaskManager.get(), effectiveProfile);
             numUnfulfilled--;
@@ -233,7 +233,7 @@ public class DefaultResourceAllocationStrategy implements ResourceAllocationStra
                                     Preconditions.checkNotNull(resourceProfile)
                                             .subtract(effectiveProfile)));
                     resultBuilder.addAllocationOnPendingResource(
-                            jobId, matchedPendingTaskManager.get(), effectiveProfile);
+                            jobId, matchedPendingTaskManager.get(), missingResource.getKey());
                 } else {
                     if (totalResourceProfile.allFieldsNoLessThan(effectiveProfile)) {
                         // Add new pending task manager
@@ -243,7 +243,7 @@ public class DefaultResourceAllocationStrategy implements ResourceAllocationStra
                         resultBuilder.addAllocationOnPendingResource(
                                 jobId,
                                 pendingTaskManager.getPendingTaskManagerId(),
-                                effectiveProfile);
+                                missingResource.getKey());
                         availableResources.put(
                                 pendingTaskManager.getPendingTaskManagerId(),
                                 totalResourceProfile.subtract(effectiveProfile));
