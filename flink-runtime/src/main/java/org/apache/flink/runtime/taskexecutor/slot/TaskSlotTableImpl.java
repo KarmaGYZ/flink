@@ -292,6 +292,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
         // The negative requestIndex indicate that the SlotManger allocate a dynamic slot, we
         // transfer the index to an increasing number not less than the numberSlots.
         int index = requestedIndex < 0 ? nextDynamicSlotIndex() : requestedIndex;
+        boolean isUnknown = resourceProfile.equals(ResourceProfile.UNKNOWN);
         ResourceProfile effectiveResourceProfile =
                 resourceProfile.equals(ResourceProfile.UNKNOWN)
                         ? defaultSlotResourceProfile
@@ -325,6 +326,7 @@ public class TaskSlotTableImpl<T extends TaskSlotPayload> implements TaskSlotTab
                         memoryPageSize,
                         jobId,
                         allocationId,
+                        isUnknown,
                         memoryVerificationExecutor);
         taskSlots.put(index, taskSlot);
 

@@ -73,6 +73,15 @@ public class ResourceProfile implements Serializable {
      */
     public static final ResourceProfile UNKNOWN = new ResourceProfile();
 
+    public static final ResourceProfile DEFAULT =
+            newBuilder()
+                    .setCpuCores(Double.MAX_VALUE)
+                    .setTaskHeapMemory(MemorySize.ZERO)
+                    .setTaskOffHeapMemory(MemorySize.MAX_VALUE)
+                    .setManagedMemory(MemorySize.ZERO)
+                    .setNetworkMemory(MemorySize.MAX_VALUE)
+                    .build();
+
     /**
      * A ResourceProfile that indicates infinite resource that matches any resource requirement, for
      * testability purpose only.
@@ -175,6 +184,7 @@ public class ResourceProfile implements Serializable {
      */
     public CPUResource getCpuCores() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return cpuCores;
     }
 
@@ -185,6 +195,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getTaskHeapMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return taskHeapMemory;
     }
 
@@ -195,6 +206,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getTaskOffHeapMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return taskOffHeapMemory;
     }
 
@@ -205,6 +217,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getManagedMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return managedMemory;
     }
 
@@ -215,6 +228,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getNetworkMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return networkMemory;
     }
 
@@ -225,6 +239,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getTotalMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return getOperatorsMemory().add(networkMemory);
     }
 
@@ -235,6 +250,7 @@ public class ResourceProfile implements Serializable {
      */
     public MemorySize getOperatorsMemory() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return taskHeapMemory.add(taskOffHeapMemory).add(managedMemory);
     }
 
@@ -245,11 +261,18 @@ public class ResourceProfile implements Serializable {
      */
     public Map<String, ExternalResource> getExtendedResources() {
         throwUnsupportedOperationExecptionIfUnknown();
+        throwUnsupportedOperationExecptionIfDefault();
         return Collections.unmodifiableMap(extendedResources);
     }
 
     private void throwUnsupportedOperationExecptionIfUnknown() {
         if (this.equals(UNKNOWN)) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private void throwUnsupportedOperationExecptionIfDefault() {
+        if (this.equals(DEFAULT)) {
             throw new UnsupportedOperationException();
         }
     }
@@ -266,6 +289,10 @@ public class ResourceProfile implements Serializable {
 
         if (this.equals(ANY)) {
             return true;
+        }
+
+        if (this.equals(DEFAULT)) {
+            return required.equals(UNKNOWN);
         }
 
         if (this.equals(required)) {
@@ -301,6 +328,7 @@ public class ResourceProfile implements Serializable {
      */
     public boolean allFieldsNoLessThan(final ResourceProfile other) {
         checkNotNull(other, "Cannot compare null resources");
+        throwUnsupportedOperationExecptionIfDefault();
 
         if (this.equals(ANY)) {
             return true;
@@ -378,6 +406,7 @@ public class ResourceProfile implements Serializable {
     @Nonnull
     public ResourceProfile merge(final ResourceProfile other) {
         checkNotNull(other, "Cannot merge with null resources");
+        throwUnsupportedOperationExecptionIfDefault();
 
         if (equals(ANY) || other.equals(ANY)) {
             return ANY;
@@ -414,6 +443,7 @@ public class ResourceProfile implements Serializable {
      */
     public ResourceProfile subtract(final ResourceProfile other) {
         checkNotNull(other, "Cannot subtract with null resources");
+        throwUnsupportedOperationExecptionIfDefault();
 
         if (equals(ANY) || other.equals(ANY)) {
             return ANY;
@@ -446,6 +476,8 @@ public class ResourceProfile implements Serializable {
     @Nonnull
     public ResourceProfile multiply(final int multiplier) {
         checkArgument(multiplier >= 0, "multiplier must be >= 0");
+        throwUnsupportedOperationExecptionIfDefault();
+
         if (equals(ANY)) {
             return ANY;
         }
@@ -480,6 +512,10 @@ public class ResourceProfile implements Serializable {
     public String toString() {
         if (this.equals(UNKNOWN)) {
             return "ResourceProfile{UNKNOWN}";
+        }
+
+        if (this.equals(DEFAULT)) {
+            return "ResourceProfile{DEFAULT}";
         }
 
         if (this.equals(ANY)) {
@@ -530,6 +566,10 @@ public class ResourceProfile implements Serializable {
 
         if (this.equals(ANY)) {
             return ANY;
+        }
+
+        if (this.equals(DEFAULT)) {
+            return DEFAULT;
         }
 
         return this;

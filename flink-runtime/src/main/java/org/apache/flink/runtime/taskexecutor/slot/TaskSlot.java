@@ -84,6 +84,8 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
     /** Allocation id of this slot. */
     private final AllocationID allocationId;
 
+    private final boolean isUnknown;
+
     /** The closing future is completed when the slot is freed and closed. */
     private final CompletableFuture<Void> closingFuture;
 
@@ -96,6 +98,7 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
             final int memoryPageSize,
             final JobID jobId,
             final AllocationID allocationId,
+            final boolean isUnknown,
             final Executor asyncExecutor) {
 
         this.index = index;
@@ -104,6 +107,7 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
 
         this.tasks = new HashMap<>(4);
         this.state = TaskSlotState.ALLOCATED;
+        this.isUnknown = isUnknown;
 
         this.jobId = jobId;
         this.allocationId = allocationId;
@@ -275,7 +279,8 @@ public class TaskSlot<T extends TaskSlotPayload> implements AutoCloseableAsync {
                 "The task slot is not in state active or allocated.");
         Preconditions.checkState(allocationId != null, "The task slot are not allocated");
 
-        return new SlotOffer(allocationId, index, resourceProfile);
+        return new SlotOffer(
+                allocationId, index, isUnknown ? ResourceProfile.DEFAULT : resourceProfile);
     }
 
     @Override
