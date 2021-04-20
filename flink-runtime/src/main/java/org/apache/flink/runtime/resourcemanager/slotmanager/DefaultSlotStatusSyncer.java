@@ -28,6 +28,7 @@ import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.instance.InstanceID;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.resourcemanager.ResourceManagerId;
+import org.apache.flink.runtime.resourcemanager.registration.TaskExecutorConnection;
 import org.apache.flink.runtime.taskexecutor.SlotReport;
 import org.apache.flink.runtime.taskexecutor.SlotStatus;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorGateway;
@@ -39,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -270,6 +272,19 @@ public class DefaultSlotStatusSyncer implements SlotStatusSyncer {
             }
         }
         return canApplyPreviousAllocations;
+    }
+
+    @Override
+    public void reclaimInactiveSlots(JobID jobId) {
+        if (!resourceTracker.getAcquiredResources(jobId).isEmpty()) {
+            final Collection<TaskExecutorConnection> taskExecutorsWithAllocatedSlots =
+                    taskManagerTracker.getTaskExecutorsWithAllocatedSlotsForJob(jobId);
+            for (TaskExecutorConnection taskExecutorConnection : taskExecutorsWithAllocatedSlots) {
+                final TaskExecutorGateway taskExecutorGateway =
+                        taskExecutorConnection.getTaskExecutorGateway();
+                taskExecutorGateway.freeInactiveSlots(jobId, taskManagerRequestTimeout);
+            }
+        }
     }
 
     private boolean syncAllocatedSlotStatus(SlotStatus slotStatus, TaskManagerInfo taskManager) {

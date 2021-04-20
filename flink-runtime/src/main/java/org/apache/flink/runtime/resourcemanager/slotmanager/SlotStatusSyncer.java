@@ -82,4 +82,11 @@ public interface SlotStatusSyncer {
      * @return whether the previous allocations can be applied
      */
     boolean reportSlotStatus(InstanceID instanceId, SlotReport slotReport);
+
+    /**
+     * When the job is removed, free all the slot it occupied.
+     *
+     * @param jobId of the removed job
+     */
+    void reclaimInactiveSlots(JobID jobId);
 }

@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertFalse;
@@ -328,5 +329,28 @@ public class FineGrainedTaskManagerTrackerTest extends TestLogger {
         assertThat(taskManagerTracker.getNumberFreeSlots(), is(8));
         assertThat(
                 taskManagerTracker.getPendingResource(), is(ResourceProfile.fromResources(4, 200)));
+    }
+
+    @Test
+    public void testGetTaskExecutorsWithAllocatedSlotsForJob() {
+        final FineGrainedTaskManagerTracker taskManagerTracker =
+                new FineGrainedTaskManagerTracker();
+        final ResourceProfile totalResource = ResourceProfile.fromResources(10, 1000);
+        final AllocationID allocationId = new AllocationID();
+        final JobID jobId1 = new JobID();
+        final JobID jobId2 = new JobID();
+        taskManagerTracker.addTaskManager(TASK_EXECUTOR_CONNECTION, totalResource, totalResource);
+        taskManagerTracker.notifySlotStatus(
+                allocationId,
+                jobId1,
+                TASK_EXECUTOR_CONNECTION.getInstanceID(),
+                ResourceProfile.fromResources(3, 200),
+                SlotState.PENDING);
+
+        assertThat(
+                taskManagerTracker.getTaskExecutorsWithAllocatedSlotsForJob(jobId1),
+                contains(TASK_EXECUTOR_CONNECTION));
+        assertThat(
+                taskManagerTracker.getTaskExecutorsWithAllocatedSlotsForJob(jobId2), is(empty()));
     }
 }

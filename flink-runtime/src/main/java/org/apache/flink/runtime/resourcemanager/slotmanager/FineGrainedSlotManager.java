@@ -259,6 +259,7 @@ public class FineGrainedSlotManager implements SlotManager {
     @Override
     public void clearResourceRequirements(JobID jobId) {
         jobMasterTargetAddresses.remove(jobId);
+        slotStatusSyncer.reclaimInactiveSlots(jobId);
         resourceTracker.notifyResourceRequirements(jobId, Collections.emptyList());
     }
 
@@ -274,9 +275,7 @@ public class FineGrainedSlotManager implements SlotManager {
                     resourceRequirements.getResourceRequirements());
         }
 
-        if (resourceRequirements.getResourceRequirements().isEmpty()) {
-            jobMasterTargetAddresses.remove(resourceRequirements.getJobId());
-        } else {
+        if (!resourceRequirements.getResourceRequirements().isEmpty()) {
             jobMasterTargetAddresses.put(
                     resourceRequirements.getJobId(), resourceRequirements.getTargetAddress());
         }

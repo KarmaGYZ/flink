@@ -41,6 +41,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -292,5 +293,40 @@ public class DefaultSlotStatusSyncerTest extends TestLogger {
         assertThat(
                 taskManagerTracker.getAllocatedOrPendingSlot(allocationId3).get().getState(),
                 is(SlotState.PENDING));
+    }
+
+    @Test
+    public void testReclaimInactiveSlots() throws Exception {
+        final FineGrainedTaskManagerTracker taskManagerTracker =
+                new FineGrainedTaskManagerTracker();
+        final CompletableFuture<JobID> freeInactiveSlotsFuture = new CompletableFuture<>();
+        final TestingTaskExecutorGateway taskExecutorGateway =
+                new TestingTaskExecutorGatewayBuilder()
+                        .setFreeInactiveSlotsConsumer(freeInactiveSlotsFuture::complete)
+                        .createTestingTaskExecutorGateway();
+        final TaskExecutorConnection taskExecutorConnection =
+                new TaskExecutorConnection(ResourceID.generate(), taskExecutorGateway);
+        final ResourceTracker resourceTracker = new DefaultResourceTracker();
+        final JobID jobId = new JobID();
+        final AllocationID allocationId = new AllocationID();
+        final SlotStatusSyncer slotStatusSyncer =
+                new DefaultSlotStatusSyncer(TASK_MANAGER_REQUEST_TIMEOUT);
+        slotStatusSyncer.initialize(
+                taskManagerTracker,
+                resourceTracker,
+                ResourceManagerId.generate(),
+                TestingUtils.defaultExecutor());
+        taskManagerTracker.addTaskManager(
+                taskExecutorConnection, ResourceProfile.ANY, ResourceProfile.ANY);
+        taskManagerTracker.notifySlotStatus(
+                allocationId,
+                jobId,
+                taskExecutorConnection.getInstanceID(),
+                ResourceProfile.ANY,
+                SlotState.ALLOCATED);
+        resourceTracker.notifyAcquiredResource(jobId, ResourceProfile.ANY);
+
+        slotStatusSyncer.reclaimInactiveSlots(jobId);
+        assertThat(freeInactiveSlotsFuture.get(10, TimeUnit.MILLISECONDS), is(jobId));
     }
 }

@@ -277,6 +277,19 @@ public class FineGrainedTaskManagerTracker implements TaskManagerTracker {
     }
 
     @Override
+    public Collection<TaskExecutorConnection> getTaskExecutorsWithAllocatedSlotsForJob(
+            JobID jobId) {
+        final Map<InstanceID, TaskExecutorConnection> taskExecutorConnections = new HashMap<>();
+        for (FineGrainedTaskManagerSlot value : slots.values()) {
+            if (jobId.equals(value.getJobId())) {
+                taskExecutorConnections.put(
+                        value.getInstanceId(), value.getTaskManagerConnection());
+            }
+        }
+        return taskExecutorConnections.values();
+    }
+
+    @Override
     public int getNumberRegisteredSlots() {
         return taskManagerRegistrations.values().stream()
                 .mapToInt(TaskManagerInfo::getDefaultNumSlots)

@@ -21,6 +21,7 @@ import org.apache.flink.api.common.JobID;
 import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.instance.InstanceID;
+import org.apache.flink.runtime.resourcemanager.registration.TaskExecutorConnection;
 import org.apache.flink.runtime.util.ResourceCounter;
 
 import java.util.Collection;
@@ -77,4 +78,13 @@ interface TaskManagerResourceInfoProvider {
      */
     Collection<PendingTaskManager> getPendingTaskManagersByTotalAndDefaultSlotResourceProfile(
             ResourceProfile totalResourceProfile, ResourceProfile defaultSlotResourceProfile);
+
+    /**
+     * Returns all task executors that have at least 1 pending/completed allocation for the given
+     * job.
+     *
+     * @param jobId the job for which the task executors must have a slot
+     * @return task executors with at least 1 slot for the job
+     */
+    Collection<TaskExecutorConnection> getTaskExecutorsWithAllocatedSlotsForJob(JobID jobId);
 }
