@@ -18,6 +18,7 @@
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.slots.ResourceRequirement;
 import org.apache.flink.util.Preconditions;
 
@@ -32,15 +33,21 @@ public class TestingResourceAllocationStrategy implements ResourceAllocationStra
                     TaskManagerResourceInfoProvider,
                     ResourceAllocationResult>
             tryFulfillRequirementsFunction;
+    private final BiFunction<Collection<TaskManagerInfo>, ResourceProfile, ResourceAllocationResult>
+            checkIdleAndRedundantTaskManagersFunction;
 
     private TestingResourceAllocationStrategy(
             BiFunction<
                             Map<JobID, Collection<ResourceRequirement>>,
                             TaskManagerResourceInfoProvider,
                             ResourceAllocationResult>
-                    tryFulfillRequirementsFunction) {
+                    tryFulfillRequirementsFunction,
+            BiFunction<Collection<TaskManagerInfo>, ResourceProfile, ResourceAllocationResult>
+                    checkIdleAndRedundantTaskManagersFunction) {
         this.tryFulfillRequirementsFunction =
                 Preconditions.checkNotNull(tryFulfillRequirementsFunction);
+        this.checkIdleAndRedundantTaskManagersFunction =
+                Preconditions.checkNotNull(checkIdleAndRedundantTaskManagersFunction);
     }
 
     @Override
@@ -49,6 +56,12 @@ public class TestingResourceAllocationStrategy implements ResourceAllocationStra
             TaskManagerResourceInfoProvider taskManagerResourceInfoProvider) {
         return tryFulfillRequirementsFunction.apply(
                 missingResources, taskManagerResourceInfoProvider);
+    }
+
+    @Override
+    public ResourceAllocationResult checkIdleAndRedundantTaskManagers(
+            Collection<TaskManagerInfo> idleTaskManagers, ResourceProfile totalFreeResource) {
+        return checkIdleAndRedundantTaskManagersFunction.apply(idleTaskManagers, totalFreeResource);
     }
 
     public static Builder newBuilder() {
@@ -62,6 +75,9 @@ public class TestingResourceAllocationStrategy implements ResourceAllocationStra
                         ResourceAllocationResult>
                 tryFulfillRequirementsFunction =
                         (ignored0, ignored1) -> ResourceAllocationResult.builder().build();
+        private BiFunction<Collection<TaskManagerInfo>, ResourceProfile, ResourceAllocationResult>
+                checkIdleAndRedundantTaskManagersFunction =
+                        (ignored0, ignored1) -> ResourceAllocationResult.builder().build();
 
         public Builder setTryFulfillRequirementsFunction(
                 BiFunction<
@@ -73,8 +89,17 @@ public class TestingResourceAllocationStrategy implements ResourceAllocationStra
             return this;
         }
 
+        public Builder setCheckIdleAndRedundantTaskManagersFunction(
+                BiFunction<Collection<TaskManagerInfo>, ResourceProfile, ResourceAllocationResult>
+                        checkIdleAndRedundantTaskManagersFunction) {
+            this.checkIdleAndRedundantTaskManagersFunction =
+                    checkIdleAndRedundantTaskManagersFunction;
+            return this;
+        }
+
         public TestingResourceAllocationStrategy build() {
-            return new TestingResourceAllocationStrategy(tryFulfillRequirementsFunction);
+            return new TestingResourceAllocationStrategy(
+                    tryFulfillRequirementsFunction, checkIdleAndRedundantTaskManagersFunction);
         }
     }
 }

@@ -194,7 +194,9 @@ public class FineGrainedSlotManager implements SlotManager {
 
         taskManagerTimeoutsCheck =
                 scheduledExecutor.scheduleWithFixedDelay(
-                        () -> mainThreadExecutor.execute(this::checkTaskManagerTimeouts),
+                        () ->
+                                mainThreadExecutor.execute(
+                                        this::checkTaskManagerTimeoutsAndRedundancy),
                         0L,
                         taskManagerTimeout.toMilliseconds(),
                         TimeUnit.MILLISECONDS);
@@ -665,14 +667,18 @@ public class FineGrainedSlotManager implements SlotManager {
     // Internal periodic check methods
     // ---------------------------------------------------------------------------------------------
 
-    private void checkTaskManagerTimeouts() {
-        for (TaskManagerInfo timeoutTaskManger : getTimeOutTaskManagers()) {
+    private void checkTaskManagerTimeoutsAndRedundancy() {
+        final ResourceAllocationResult result =
+                resourceAllocationStrategy.checkIdleAndRedundantTaskManagers(
+                        getTimeOutTaskManagers(), taskManagerTracker.getFreeResource());
+        for (TaskManagerInfo timeoutTaskManger : result.getIdleTaskManagerToBeReleased()) {
             if (waitResultConsumedBeforeRelease) {
                 releaseIdleTaskExecutorIfPossible(timeoutTaskManger);
             } else {
                 releaseIdleTaskExecutor(timeoutTaskManger.getInstanceId());
             }
         }
+        allocateTaskManagersAccordingTo(result.getPendingTaskManagersToAllocate());
     }
 
     private Collection<TaskManagerInfo> getTimeOutTaskManagers() {

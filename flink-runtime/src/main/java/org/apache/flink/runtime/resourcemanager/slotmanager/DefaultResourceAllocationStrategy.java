@@ -55,14 +55,44 @@ public class DefaultResourceAllocationStrategy implements ResourceAllocationStra
     private final ResourceProfile defaultSlotResourceProfile;
     private final ResourceProfile totalResourceProfile;
     private final int numSlotsPerWorker;
+    private final int redundantTaskManagerNum;
 
     public DefaultResourceAllocationStrategy(
-            ResourceProfile totalResourceProfile, int numSlotsPerWorker) {
+            ResourceProfile totalResourceProfile,
+            int numSlotsPerWorker,
+            int redundantTaskManagerNum) {
         this.totalResourceProfile = totalResourceProfile;
         this.numSlotsPerWorker = numSlotsPerWorker;
+        this.redundantTaskManagerNum = redundantTaskManagerNum;
         this.defaultSlotResourceProfile =
                 SlotManagerUtils.generateDefaultSlotResourceProfile(
                         totalResourceProfile, numSlotsPerWorker);
+    }
+
+    @Override
+    public ResourceAllocationResult checkIdleAndRedundantTaskManagers(
+            Collection<TaskManagerInfo> idleTaskManagers, ResourceProfile totalFreeResource) {
+        final ResourceAllocationResult.Builder resultBuilder = ResourceAllocationResult.builder();
+
+        int currentRedundant = 0;
+        while (totalFreeResource.allFieldsNoLessThan(totalResourceProfile)) {
+            currentRedundant++;
+            totalFreeResource = totalFreeResource.subtract(totalResourceProfile);
+        }
+        if (currentRedundant < redundantTaskManagerNum) {
+            while (currentRedundant < redundantTaskManagerNum) {
+                currentRedundant++;
+                resultBuilder.addPendingTaskManagerAllocate(
+                        new PendingTaskManager(totalResourceProfile, numSlotsPerWorker));
+            }
+        } else {
+            final Iterator<TaskManagerInfo> idleTaskManagersItr = idleTaskManagers.iterator();
+            while (currentRedundant > redundantTaskManagerNum && idleTaskManagersItr.hasNext()) {
+                currentRedundant--;
+                resultBuilder.addIdleTaskManagerToBeReleased(idleTaskManagersItr.next());
+            }
+        }
+        return resultBuilder.build();
     }
 
     @Override

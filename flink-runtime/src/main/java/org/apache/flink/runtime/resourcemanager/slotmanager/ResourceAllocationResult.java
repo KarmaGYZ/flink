@@ -38,16 +38,19 @@ public class ResourceAllocationResult {
     private final List<PendingTaskManager> pendingTaskManagersToAllocate;
     private final Map<PendingTaskManagerId, Map<JobID, ResourceCounter>>
             allocationsOnPendingResources;
+    private final List<TaskManagerInfo> idleTaskManagerToBeReleased;
 
     private ResourceAllocationResult(
             Set<JobID> unfulfillableJobs,
             Map<JobID, Map<InstanceID, ResourceCounter>> allocationsOnRegisteredResources,
             List<PendingTaskManager> pendingTaskManagersToAllocate,
-            Map<PendingTaskManagerId, Map<JobID, ResourceCounter>> allocationsOnPendingResources) {
+            Map<PendingTaskManagerId, Map<JobID, ResourceCounter>> allocationsOnPendingResources,
+            List<TaskManagerInfo> idleTaskManagerToBeReleased) {
         this.unfulfillableJobs = unfulfillableJobs;
         this.allocationsOnRegisteredResources = allocationsOnRegisteredResources;
         this.pendingTaskManagersToAllocate = pendingTaskManagersToAllocate;
         this.allocationsOnPendingResources = allocationsOnPendingResources;
+        this.idleTaskManagerToBeReleased = idleTaskManagerToBeReleased;
     }
 
     public List<PendingTaskManager> getPendingTaskManagersToAllocate() {
@@ -67,6 +70,10 @@ public class ResourceAllocationResult {
         return Collections.unmodifiableMap(allocationsOnPendingResources);
     }
 
+    public List<TaskManagerInfo> getIdleTaskManagerToBeReleased() {
+        return Collections.unmodifiableList(idleTaskManagerToBeReleased);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -78,6 +85,7 @@ public class ResourceAllocationResult {
         private final List<PendingTaskManager> pendingTaskManagersToAllocate = new ArrayList<>();
         private final Map<PendingTaskManagerId, Map<JobID, ResourceCounter>>
                 allocationsOnPendingResources = new HashMap<>();
+        private final List<TaskManagerInfo> idleTaskManagerToBeReleased = new ArrayList<>();
 
         public Builder addUnfulfillableJob(JobID jobId) {
             this.unfulfillableJobs.add(jobId);
@@ -123,12 +131,18 @@ public class ResourceAllocationResult {
             return this;
         }
 
+        public Builder addIdleTaskManagerToBeReleased(TaskManagerInfo taskManagerInfo) {
+            this.idleTaskManagerToBeReleased.add(taskManagerInfo);
+            return this;
+        }
+
         public ResourceAllocationResult build() {
             return new ResourceAllocationResult(
                     unfulfillableJobs,
                     allocationsOnRegisteredResources,
                     pendingTaskManagersToAllocate,
-                    allocationsOnPendingResources);
+                    allocationsOnPendingResources,
+                    idleTaskManagerToBeReleased);
         }
     }
 }

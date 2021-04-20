@@ -94,7 +94,8 @@ public class ResourceManagerRuntimeServices {
                     new DefaultResourceAllocationStrategy(
                             SlotManagerUtils.generateTaskManagerTotalResourceProfile(
                                     slotManagerConfiguration.getDefaultWorkerResourceSpec()),
-                            slotManagerConfiguration.getNumSlotsPerWorker()),
+                            slotManagerConfiguration.getNumSlotsPerWorker(),
+                            slotManagerConfiguration.getRedundantTaskManagerNum()),
                     Time.milliseconds(REQUIREMENTS_CHECK_DELAY_MS));
         } else if (configuration.isDeclarativeResourceManagementEnabled()) {
             return new DeclarativeSlotManager(

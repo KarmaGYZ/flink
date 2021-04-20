@@ -18,11 +18,13 @@
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.api.common.time.Time;
 import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.runtime.clusterframework.types.AllocationID;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.clusterframework.types.SlotID;
+import org.apache.flink.runtime.instance.InstanceID;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.resourcemanager.ResourceManagerId;
 import org.apache.flink.runtime.resourcemanager.WorkerResourceSpec;
@@ -50,6 +52,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -644,5 +647,92 @@ public abstract class AbstractFineGrainedSlotManagerITCase extends FineGrainedSl
         };
 
         System.setSecurityManager(null);
+    }
+
+    /**
+     * Tests that formerly used task managers can timeout after all of their slots have been freed.
+     */
+    @Test
+    public void testTimeoutForUnusedTaskManager() throws Exception {
+        final Time taskManagerTimeout = Time.milliseconds(50L);
+
+        final CompletableFuture<InstanceID> releaseResourceFuture = new CompletableFuture<>();
+        final AllocationID allocationId = new AllocationID();
+        final TaskExecutorConnection taskExecutionConnection = createTaskExecutorConnection();
+        final InstanceID instanceId = taskExecutionConnection.getInstanceID();
+        new Context() {
+            {
+                resourceActionsBuilder.setReleaseResourceConsumer(
+                        (instanceID, e) -> releaseResourceFuture.complete(instanceID));
+                slotManagerConfigurationBuilder.setTaskManagerTimeout(taskManagerTimeout);
+                runTest(
+                        () -> {
+                            final CompletableFuture<Boolean> registerTaskManagerFuture =
+                                    new CompletableFuture<>();
+                            runInMainThread(
+                                    () ->
+                                            registerTaskManagerFuture.complete(
+                                                    getSlotManager()
+                                                            .registerTaskManager(
+                                                                    taskExecutionConnection,
+                                                                    new SlotReport(
+                                                                            createAllocatedSlotStatus(
+                                                                                    allocationId,
+                                                                                    DEFAULT_SLOT_RESOURCE_PROFILE)),
+                                                                    DEFAULT_TOTAL_RESOURCE_PROFILE,
+                                                                    DEFAULT_SLOT_RESOURCE_PROFILE)));
+                            assertThat(
+                                    assertFutureCompleteAndReturn(registerTaskManagerFuture),
+                                    is(true));
+                            assertEquals(
+                                    getSlotManager().getTaskManagerIdleSince(instanceId),
+                                    Long.MAX_VALUE);
+
+                            final CompletableFuture<Long> idleSinceFuture =
+                                    new CompletableFuture<>();
+                            runInMainThread(
+                                    () -> {
+                                        getSlotManager()
+                                                .freeSlot(
+                                                        new SlotID(
+                                                                taskExecutionConnection
+                                                                        .getResourceID(),
+                                                                0),
+                                                        allocationId);
+                                        idleSinceFuture.complete(
+                                                getSlotManager()
+                                                        .getTaskManagerIdleSince(instanceId));
+                                    });
+
+                            assertThat(
+                                    assertFutureCompleteAndReturn(idleSinceFuture),
+                                    not(equalTo(Long.MAX_VALUE)));
+                            assertThat(
+                                    assertFutureCompleteAndReturn(releaseResourceFuture),
+                                    is(equalTo(instanceId)));
+                            // A task manager timeout does not remove the slots from the
+                            // SlotManager. The receiver of the callback can then decide what to do
+                            // with the TaskManager.
+                            assertEquals(
+                                    DEFAULT_NUM_SLOTS_PER_WORKER,
+                                    getSlotManager().getNumberRegisteredSlots());
+
+                            final CompletableFuture<Boolean> unregisterTaskManagerFuture =
+                                    new CompletableFuture<>();
+                            runInMainThread(
+                                    () ->
+                                            unregisterTaskManagerFuture.complete(
+                                                    getSlotManager()
+                                                            .unregisterTaskManager(
+                                                                    taskExecutionConnection
+                                                                            .getInstanceID(),
+                                                                    TEST_EXCEPTION)));
+                            assertThat(
+                                    assertFutureCompleteAndReturn(unregisterTaskManagerFuture),
+                                    is(true));
+                            assertEquals(0, getSlotManager().getNumberRegisteredSlots());
+                        });
+            }
+        };
     }
 }

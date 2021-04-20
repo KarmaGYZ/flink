@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.resourcemanager.slotmanager;
 
 import org.apache.flink.api.common.JobID;
+import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.slots.ResourceRequirement;
 
 import java.util.Collection;
@@ -43,4 +44,17 @@ public interface ResourceAllocationStrategy {
     ResourceAllocationResult tryFulfillRequirements(
             Map<JobID, Collection<ResourceRequirement>> missingResources,
             TaskManagerResourceInfoProvider taskManagerResourceInfoProvider);
+
+    /**
+     * Check which of the idle task managers can be released and what the redundant task managers
+     * should allocated.
+     *
+     * @param idleTaskManagers current idle task managers
+     * @param totalFreeResource total free resource in current cluster
+     * @return a {@link ResourceAllocationResult} based on the current status, which contains
+     *     whether the idle task managers can be released and the redundant task managers to be
+     *     allocated
+     */
+    ResourceAllocationResult checkIdleAndRedundantTaskManagers(
+            Collection<TaskManagerInfo> idleTaskManagers, ResourceProfile totalFreeResource);
 }
