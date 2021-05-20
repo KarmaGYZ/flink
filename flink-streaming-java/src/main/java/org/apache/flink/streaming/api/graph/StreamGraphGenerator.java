@@ -708,7 +708,9 @@ public class StreamGraphGenerator {
 
         final String slotSharingGroup =
                 determineSlotSharingGroup(
-                        transform.getSlotSharingGroup(),
+                        transform.getSlotSharingGroup().isPresent()
+                                ? transform.getSlotSharingGroup().get().getName()
+                                : null,
                         allInputIds.stream()
                                 .flatMap(Collection::stream)
                                 .collect(Collectors.toList()));

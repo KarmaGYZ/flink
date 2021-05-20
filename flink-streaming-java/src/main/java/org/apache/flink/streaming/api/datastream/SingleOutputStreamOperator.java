@@ -21,6 +21,7 @@ import org.apache.flink.annotation.Public;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.functions.InvalidTypesException;
 import org.apache.flink.api.common.operators.ResourceSpec;
+import org.apache.flink.api.common.operators.SlotSharingGroup;
 import org.apache.flink.api.common.operators.util.OperatorValidationUtils;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -369,6 +370,12 @@ public class SingleOutputStreamOperator<T> extends DataStream<T> {
      */
     @PublicEvolving
     public SingleOutputStreamOperator<T> slotSharingGroup(String slotSharingGroup) {
+        transformation.setSlotSharingGroup(slotSharingGroup);
+        return this;
+    }
+
+    @PublicEvolving
+    public SingleOutputStreamOperator<T> slotSharingGroup(SlotSharingGroup slotSharingGroup) {
         transformation.setSlotSharingGroup(slotSharingGroup);
         return this;
     }

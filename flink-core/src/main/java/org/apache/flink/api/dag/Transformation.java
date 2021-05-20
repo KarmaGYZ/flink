@@ -21,6 +21,7 @@ package org.apache.flink.api.dag;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.functions.InvalidTypesException;
 import org.apache.flink.api.common.operators.ResourceSpec;
+import org.apache.flink.api.common.operators.SlotSharingGroup;
 import org.apache.flink.api.common.operators.util.OperatorValidationUtils;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.MissingTypeInfo;
@@ -167,7 +168,7 @@ public abstract class Transformation<T> {
 
     protected long bufferTimeout = -1;
 
-    private String slotSharingGroup;
+    private Optional<SlotSharingGroup> slotSharingGroup;
 
     @Nullable private String coLocationGroupKey;
 
@@ -184,7 +185,7 @@ public abstract class Transformation<T> {
         this.name = Preconditions.checkNotNull(name);
         this.outputType = outputType;
         this.parallelism = parallelism;
-        this.slotSharingGroup = null;
+        this.slotSharingGroup = Optional.empty();
     }
 
     /** Returns the unique ID of this {@code Transformation}. */
@@ -394,7 +395,7 @@ public abstract class Transformation<T> {
      *
      * @see #setSlotSharingGroup(String)
      */
-    public String getSlotSharingGroup() {
+    public Optional<SlotSharingGroup> getSlotSharingGroup() {
         return slotSharingGroup;
     }
 
@@ -408,7 +409,11 @@ public abstract class Transformation<T> {
      * @param slotSharingGroup The slot sharing group name.
      */
     public void setSlotSharingGroup(String slotSharingGroup) {
-        this.slotSharingGroup = slotSharingGroup;
+        this.slotSharingGroup = Optional.of(new SlotSharingGroup(slotSharingGroup));
+    }
+
+    public void setSlotSharingGroup(SlotSharingGroup slotSharingGroup) {
+        this.slotSharingGroup = Optional.of(slotSharingGroup);
     }
 
     /**

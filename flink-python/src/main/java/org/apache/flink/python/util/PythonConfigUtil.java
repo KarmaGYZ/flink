@@ -227,7 +227,9 @@ public class PythonConfigUtil {
 
     private static void chainTransformation(
             Transformation<?> firstTransformation, Transformation<?> secondTransformation) {
-        firstTransformation.setSlotSharingGroup(secondTransformation.getSlotSharingGroup());
+        secondTransformation
+                .getSlotSharingGroup()
+                .ifPresent(firstTransformation::setSlotSharingGroup);
         firstTransformation.setCoLocationGroupKey(secondTransformation.getCoLocationGroupKey());
         firstTransformation.setParallelism(secondTransformation.getParallelism());
     }
