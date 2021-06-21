@@ -89,6 +89,7 @@ import org.apache.flink.streaming.api.functions.source.SocketTextStreamFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.functions.source.StatefulSequenceSource;
 import org.apache.flink.streaming.api.functions.source.TimestampedFileInputSplit;
+import org.apache.flink.streaming.api.graph.GlobalDataExchangeMode;
 import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.streaming.api.graph.StreamGraphGenerator;
 import org.apache.flink.streaming.api.graph.StreamingJobGraphGenerator;
@@ -2033,6 +2034,13 @@ public class StreamExecutionEnvironment {
     @Internal
     public StreamGraph getStreamGraph(String jobName, boolean clearTransformations) {
         StreamGraph streamGraph = getStreamGraphGenerator().setJobName(jobName).generate();
+
+        // Force the GlobalDataExchangeMode to ALL_EDGES_BLOCKING
+        if (configuration.get(ExecutionOptions.RUNTIME_MODE) == RuntimeExecutionMode.BATCH
+                && !slotSharingGroupResources.isEmpty()) {
+            streamGraph.setGlobalDataExchangeMode(GlobalDataExchangeMode.ALL_EDGES_BLOCKING);
+        }
+
         if (clearTransformations) {
             this.transformations.clear();
         }
